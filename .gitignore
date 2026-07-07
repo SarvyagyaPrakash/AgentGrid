@@ -61,3 +61,8 @@ LICENSE
 # Logs
 *.log
 Tutorial.md
+
+# Helper scripts and outputs
+extract_frame.py
+pick_zone_points.py
+test_frame.png
