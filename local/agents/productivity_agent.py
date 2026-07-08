@@ -136,14 +136,18 @@ class ProductivityAgent(BaseAgent):
                 else:
                     state = "idle"
 
+            metadata = {
+                "displacement": round(total_displacement, 2),
+                "window_seconds": ROLLING_WINDOW_SECONDS
+            }
+            if len(ids_present) == 1:
+                metadata["track_id"] = int(list(ids_present)[0])
+
             self.emit_event(
                 agent_name=self.agent_name,
                 event_type=state,
                 confidence=1.0,
-                metadata={
-                    "displacement": round(total_displacement, 2),
-                    "window_seconds": ROLLING_WINDOW_SECONDS
-                }
+                metadata=metadata
             )
             
             # Reset window

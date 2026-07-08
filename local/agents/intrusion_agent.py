@@ -66,9 +66,10 @@ class IntrusionAgent(BaseAgent):
         intrusion_detected = False
         highest_conf = 0.0
         intruder_box = None
+        intruder_track_id = None
 
         # First pass to check if ANY intrusion occurred
-        for box in boxes:
+        for i, box in enumerate(boxes):
             x1, y1, x2, y2 = map(int, box.xyxy[0])
             center_x = (x1 + x2) // 2
             center_y = (y1 + y2) // 2
@@ -80,6 +81,8 @@ class IntrusionAgent(BaseAgent):
                 if conf > highest_conf:
                     highest_conf = conf
                     intruder_box = [x1, y1, x2, y2]
+                    if track_ids is not None and i < len(track_ids):
+                        intruder_track_id = int(track_ids[i])
 
         # Draw the restricted zone (red if intrusion, orange if not)
         zone_color = (0, 0, 255) if intrusion_detected else (0, 165, 255)
@@ -117,14 +120,18 @@ class IntrusionAgent(BaseAgent):
             if current_time - self.last_alarm_time > 3.0:
                 self.last_alarm_time = current_time
                 
+                metadata = {
+                    "box": intruder_box,
+                    "zone": ZONE_NAME
+                }
+                if intruder_track_id is not None:
+                    metadata["track_id"] = intruder_track_id
+
                 self.emit_event(
                     agent_name=self.agent_name,
                     event_type="intrusion",
                     confidence=round(highest_conf, 2),
-                    metadata={
-                        "box": intruder_box,
-                        "zone": ZONE_NAME
-                    }
+                    metadata=metadata
                 )
                 
                 if self.siren_wave:
