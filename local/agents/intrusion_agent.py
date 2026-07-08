@@ -22,11 +22,13 @@ ACTIVE_HOURS_START = 0  # 00:00 (Placeholder, change to actual start hour)
 ACTIVE_HOURS_END = 24   # 24:00 (Placeholder, change to actual end hour)
 
 class IntrusionAgent(BaseAgent):
-    def __init__(self, camera_id: str):
+    def __init__(self, camera_id: str, zone_polygon=None):
         super().__init__(camera_id)
         self.agent_name = "intrusion_detection"
         print(f"[{self.agent_name}] Loading YOLOv8s model...")
         self.model = YOLO("yolov8s.pt")
+        
+        self.zone_polygon = zone_polygon if zone_polygon is not None else RESTRICTED_ZONE_POLYGON
         
         # Load the siren sound object
         try:
@@ -45,18 +47,21 @@ class IntrusionAgent(BaseAgent):
         else:
             return current_hour >= ACTIVE_HOURS_START or current_hour < ACTIVE_HOURS_END
 
-    async def on_frame(self, frame):
+    async def on_frame(self, frame, results=None):
         if not self.is_within_active_hours():
             cv2.putText(frame, f"[{self.agent_name}] OUTSIDE ACTIVE HOURS", (10, 30), 
                         cv2.FONT_HERSHEY_SIMPLEX, 0.7, (200, 200, 200), 2)
             # Draw the restricted zone on the frame (orange)
-            cv2.polylines(frame, [RESTRICTED_ZONE_POLYGON], isClosed=True, color=(0, 165, 255), thickness=2)
-            cv2.putText(frame, ZONE_NAME, (RESTRICTED_ZONE_POLYGON[0][0], RESTRICTED_ZONE_POLYGON[0][1] - 10), 
+            cv2.polylines(frame, [self.zone_polygon], isClosed=True, color=(0, 165, 255), thickness=2)
+            cv2.putText(frame, ZONE_NAME, (self.zone_polygon[0][0], self.zone_polygon[0][1] - 10), 
                         cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 165, 255), 2)
             return
             
-        results = self.model.predict(source=frame, classes=[0], conf=0.5, verbose=False)
+        if results is None:
+            results = self.model.predict(source=frame, classes=[0], conf=0.5, verbose=False)
+            
         boxes = results[0].boxes
+        track_ids = boxes.id.int().cpu().numpy() if (boxes is not None and boxes.id is not None) else None
         
         intrusion_detected = False
         highest_conf = 0.0
@@ -68,7 +73,7 @@ class IntrusionAgent(BaseAgent):
             center_x = (x1 + x2) // 2
             center_y = (y1 + y2) // 2
             conf = float(box.conf[0])
-            inside = cv2.pointPolygonTest(RESTRICTED_ZONE_POLYGON, (center_x, center_y), measureDist=False)
+            inside = cv2.pointPolygonTest(self.zone_polygon, (center_x, center_y), measureDist=False)
             
             if inside >= 0:
                 intrusion_detected = True
@@ -78,11 +83,11 @@ class IntrusionAgent(BaseAgent):
 
         # Draw the restricted zone (red if intrusion, orange if not)
         zone_color = (0, 0, 255) if intrusion_detected else (0, 165, 255)
-        cv2.polylines(frame, [RESTRICTED_ZONE_POLYGON], isClosed=True, color=zone_color, thickness=2)
-        cv2.putText(frame, ZONE_NAME, (RESTRICTED_ZONE_POLYGON[0][0], RESTRICTED_ZONE_POLYGON[0][1] - 10), 
+        cv2.polylines(frame, [self.zone_polygon], isClosed=True, color=zone_color, thickness=2)
+        cv2.putText(frame, ZONE_NAME, (self.zone_polygon[0][0], self.zone_polygon[0][1] - 10), 
                     cv2.FONT_HERSHEY_SIMPLEX, 0.6, zone_color, 2)
 
-        # Second pass to draw person boxes, P1 labels, and confidences
+        # Second pass to draw person boxes, labels, and confidences
         for i, box in enumerate(boxes):
             x1, y1, x2, y2 = map(int, box.xyxy[0])
             conf = float(box.conf[0])
@@ -90,7 +95,7 @@ class IntrusionAgent(BaseAgent):
             center_x = (x1 + x2) // 2
             center_y = (y1 + y2) // 2
             
-            inside = cv2.pointPolygonTest(RESTRICTED_ZONE_POLYGON, (center_x, center_y), measureDist=False)
+            inside = cv2.pointPolygonTest(self.zone_polygon, (center_x, center_y), measureDist=False)
             
             if inside >= 0:
                 # Draw red box for intruder
@@ -101,8 +106,9 @@ class IntrusionAgent(BaseAgent):
                 cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
                 cv2.circle(frame, (center_x, center_y), 5, (0, 255, 0), -1)
 
-            # Draw label P1, P2, etc and Confidence
-            label = f"P{i+1} ({conf:.2f})"
+            # Use track ID if available, otherwise index
+            person_id = track_ids[i] if track_ids is not None else i + 1
+            label = f"P{person_id} ({conf:.2f})"
             # Blue color is (255, 0, 0) in BGR
             cv2.putText(frame, label, (x1, max(y1 - 10, 20)), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 0), 2)
 

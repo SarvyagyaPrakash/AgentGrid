@@ -26,41 +26,26 @@ echo "mediamtx running with PID $MEDIAMTX_PID"
 # Give the server a second to start up
 sleep 1
 
-# 2. Find the video file
-# If an argument is provided, use that. Otherwise, look for the first file in sample_videos/
-if [ -n "$1" ]; then
-    VIDEO_PATH="$1"
-    if [ ! -f "$VIDEO_PATH" ]; then
-        echo "Error: File $VIDEO_PATH not found."
-        kill $MEDIAMTX_PID
-        exit 1
-    fi
-else
-    VIDEO_FILE=$(ls "$SAMPLE_DIR" | grep -v '^\.' | head -n 1 || true)
-    if [ -z "$VIDEO_FILE" ]; then
-        echo "Error: No video file found in $SAMPLE_DIR"
-        kill $MEDIAMTX_PID
-        exit 1
-    fi
-    VIDEO_PATH="$SAMPLE_DIR/$VIDEO_FILE"
-fi
+# 2. Start streaming both videos
+echo "Starting streams to cctv1 and office..."
 
-echo "Found video file: $VIDEO_PATH"
-echo "Starting stream to rtsp://localhost:8554/cam1..."
+ffmpeg -re -stream_loop -1 -i "$SAMPLE_DIR/CCTV1.mp4" -c:v libx264 -preset ultrafast -tune zerolatency -g 30 -f rtsp rtsp://localhost:8554/cctv1 > /dev/null 2>&1 &
+FFMPEG1_PID=$!
 
-# 3. Use ffmpeg to stream the video
-# EXPLANATION OF FFMPEG FLAGS:
-# -re : Read input at native frame rate (essential for simulating a live stream).
-# -stream_loop -1 : Loop the input video infinitely.
-# -i "$VIDEO_PATH" : Specify the input video file.
-# -c:v libx264 : Re-encode video to H.264 (helps fix OpenCV decoding errors on some MP4s).
-# -preset ultrafast -tune zerolatency : Optimize for live streaming.
-# -g 30 : Force a keyframe every 30 frames (fixes "Missing reference picture" in OpenCV).
-# -f rtsp : Specify the output format as RTSP.
+ffmpeg -re -stream_loop -1 -i "$SAMPLE_DIR/OFFICE.mp4" -c:v libx264 -preset ultrafast -tune zerolatency -g 30 -f rtsp rtsp://localhost:8554/office > /dev/null 2>&1 &
+FFMPEG2_PID=$!
 
-ffmpeg -re -stream_loop -1 -i "$VIDEO_PATH" -c:v libx264 -preset ultrafast -tune zerolatency -g 30 -f rtsp rtsp://localhost:8554/cam1
+echo "CCTV1 streaming at rtsp://localhost:8554/cctv1 (PID: $FFMPEG1_PID)"
+echo "OFFICE streaming at rtsp://localhost:8554/office (PID: $FFMPEG2_PID)"
 
+# Cleanup when script is stopped
+cleanup() {
+    echo "Stopping streams and mediamtx..."
+    kill $FFMPEG1_PID $FFMPEG2_PID $MEDIAMTX_PID 2>/dev/null || true
+}
 
-# Cleanup when ffmpeg is stopped (e.g. by Ctrl+C)
-echo "Stopping mediamtx server..."
-kill $MEDIAMTX_PID
+trap cleanup SIGINT SIGTERM EXIT
+
+# Keep script running
+wait
+
