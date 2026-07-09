@@ -18,3 +18,4 @@ def publish_event(event_data: dict):
             print(f"[Publisher] Error: Cloud API returned status code {response.status_code}. Response: {response.text}")
     except Exception as e:
         print(f"[Publisher] Error: Failed to connect to Cloud API at {API_URL}. Details: {e}")
+

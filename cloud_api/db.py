@@ -11,22 +11,25 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 if not DATABASE_URL:
     raise ValueError("DATABASE_URL is not set in the environment")
 
-# Initialize connection pool
-try:
-    pool = ThreadedConnectionPool(1, 10, dsn=DATABASE_URL)
-    logging.info("Database connection pool initialized successfully")
-except Exception as e:
-    logging.error(f"Error initializing connection pool: {e}")
-    pool = None
+_pool = None
+
+def get_pool():
+    global _pool
+    if _pool is None:
+        try:
+            _pool = ThreadedConnectionPool(1, 10, dsn=DATABASE_URL)
+            logging.info("Database connection pool initialized successfully")
+        except Exception as e:
+            logging.error(f"Error initializing connection pool: {e}")
+            raise RuntimeError(f"Database connection pool is not initialized: {e}")
+    return _pool
 
 def get_connection():
-    if pool is None:
-        raise Exception("Database connection pool is not initialized")
-    return pool.getconn()
+    return get_pool().getconn()
 
 def put_connection(conn):
-    if pool is not None:
-        pool.putconn(conn)
+    if _pool is not None:
+        _pool.putconn(conn)
 
 def save_event(event: dict):
     """Saves an event to the event_log table."""

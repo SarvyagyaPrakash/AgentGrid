@@ -1,6 +1,7 @@
 from fastapi import FastAPI, HTTPException, Body
 from fastapi.middleware.cors import CORSMiddleware
 from models import Event, AgentConfig, CameraInput
+from psycopg2.extras import RealDictCursor
 import db
 
 app = FastAPI(title="AgentGrid Cloud API")
@@ -12,6 +13,18 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.get("/health")
+async def health():
+    try:
+        conn = db.get_connection()
+        with conn.cursor() as cur:
+            cur.execute("SELECT 1")
+            cur.fetchone()
+        db.put_connection(conn)
+        return {"status": "ok", "database": "connected"}
+    except Exception as e:
+        raise HTTPException(status_code=503, detail=f"Database healthcheck failed: {str(e)}")
 
 @app.post("/api/events")
 async def create_event(event: Event):
