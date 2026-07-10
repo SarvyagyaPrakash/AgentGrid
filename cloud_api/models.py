@@ -19,3 +19,6 @@ class CameraInput(BaseModel):
     camera_id: Optional[str] = None
     name: str
     rtsp_url: str
+
+class AskRequest(BaseModel):
+    question: str

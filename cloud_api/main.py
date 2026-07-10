@@ -1,8 +1,11 @@
-from fastapi import FastAPI, HTTPException, Body
+from fastapi import FastAPI, HTTPException, Body, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
-from models import Event, AgentConfig, CameraInput
+from models import Event, AgentConfig, CameraInput, AskRequest
 from psycopg2.extras import RealDictCursor
 import db
+from redis_bus import publish_to_dashboard, subscribe_dashboard
+import logging
+from ask_agent import ask_agent_query
 
 app = FastAPI(title="AgentGrid Cloud API")
 
@@ -29,10 +32,23 @@ async def health():
 @app.post("/api/events")
 async def create_event(event: Event):
     try:
-        db.save_event(event.model_dump())
+        event_dict = event.model_dump()
+        db.save_event(event_dict)
+        await publish_to_dashboard(event_dict)
         return {"status": "success", "message": "Event logged successfully"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+
+@app.websocket("/ws/live")
+async def websocket_endpoint(websocket: WebSocket):
+    await websocket.accept()
+    try:
+        async for event in subscribe_dashboard():
+            await websocket.send_json(event)
+    except WebSocketDisconnect:
+        logging.info("WebSocket client disconnected")
+    except Exception as e:
+        logging.error(f"WebSocket connection error: {e}")
 
 @app.get("/api/agents")
 async def get_agents():
@@ -59,3 +75,11 @@ async def add_camera(camera: CameraInput):
         return {"status": "success", "camera_id": camera_id}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+
+@app.post("/api/ask")
+async def ask_cameras(request: AskRequest):
+    try:
+        res = ask_agent_query(request.question)
+        return res
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error in reasoning layer: {str(e)}")

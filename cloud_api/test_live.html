@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AgentGrid Live Feed Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f9;
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        #status {
+            padding: 10px;
+            border-radius: 5px;
+            display: inline-block;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+
+        .connected {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .disconnected {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+
+        #events {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        .event-card {
+            background-color: #fff;
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .event-header {
+            display: flex;
+            justify-content: space-between;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .confidence {
+            color: #0056b3;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>AgentGrid Live Feed</h1>
+    <div id="status" class="disconnected">Connecting...</div>
+    <ul id="events"></ul>
+
+    <script>
+        const statusDiv = document.getElementById("status");
+        const eventsList = document.getElementById("events");
+
+        // Determine WS URL (default to localhost:8333 if opened directly as file)
+        const host = window.location.host || "localhost:8333";
+        const wsUrl = `ws://${host}/ws/live`;
+
+        const ws = new WebSocket(wsUrl);
+
+        ws.onopen = () => {
+            statusDiv.textContent = `Connected to ${wsUrl}`;
+            statusDiv.className = "connected";
+        };
+
+        ws.onclose = () => {
+            statusDiv.textContent = "Disconnected from Live Feed";
+            statusDiv.className = "disconnected";
+        };
+
+        ws.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            const li = document.createElement("li");
+            li.className = "event-card";
+            li.innerHTML = `
+                <div class="event-header">
+                    <span>Camera: ${data.camera_id} | Agent: ${data.agent}</span>
+                    <span class="confidence">Confidence: ${(data.confidence * 100).toFixed(1)}%</span>
+                </div>
+                <div><strong>Event Type:</strong> ${data.event_type}</div>
+                <div><strong>Timestamp:</strong> ${data.timestamp}</div>
+                <div><strong>Metadata:</strong> <pre>${JSON.stringify(data.metadata, null, 2)}</pre></div>
+            `;
+            eventsList.insertBefore(li, eventsList.firstChild);
+        };
+    </script>
+</body>
+
+</html>

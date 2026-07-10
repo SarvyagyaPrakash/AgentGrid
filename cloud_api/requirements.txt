@@ -3,3 +3,5 @@ uvicorn
 psycopg2-binary
 python-dotenv
 pydantic
+redis==8.0.1
+websockets==16.0
