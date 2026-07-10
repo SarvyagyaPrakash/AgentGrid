@@ -123,3 +123,53 @@ def insert_camera(camera_id: str, name: str, rtsp_url: str):
         raise e
     finally:
         put_connection(conn)
+
+def get_cameras():
+    """Retrieves all cameras."""
+    conn = get_connection()
+    try:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute(
+                """
+                SELECT camera_id, name, rtsp_url, added_at
+                FROM cameras
+                """
+            )
+            results = cur.fetchall()
+            for row in results:
+                if row.get("added_at"):
+                    row["added_at"] = row["added_at"].isoformat()
+            return [dict(row) for row in results]
+    except Exception as e:
+        logging.error(f"Failed to fetch cameras: {e}")
+        raise e
+    finally:
+        put_connection(conn)
+
+def get_recent_events(limit: int = 50):
+    """Retrieves recent events."""
+    conn = get_connection()
+    try:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute(
+                """
+                SELECT id, camera_id, agent, event_type, confidence, metadata, created_at
+                FROM event_log
+                ORDER BY created_at DESC
+                LIMIT %s
+                """,
+                (limit,)
+            )
+            results = cur.fetchall()
+            for row in results:
+                if row.get("created_at"):
+                    row["timestamp"] = row["created_at"].isoformat()
+                    del row["created_at"]
+            return [dict(row) for row in results]
+    except Exception as e:
+        logging.error(f"Failed to fetch recent events: {e}")
+        raise e
+    finally:
+        put_connection(conn)
+
+

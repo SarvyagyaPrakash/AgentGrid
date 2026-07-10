@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AgentGrid Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#08080c;
+  --surface:rgba(18,18,26,.72);
+  --surface-alt:rgba(12,12,18,.85);
+  --surface-hover:rgba(30,30,40,.6);
+  --border:rgba(255,255,255,.04);
+  --border-light:rgba(255,255,255,.07);
+  --border-accent:rgba(91,214,184,.18);
+  --text:#ececf0;
+  --text-secondary:#92929e;
+  --text-tertiary:#626270;
+  --accent:#5bd6b8;
+  --accent-glow:rgba(91,214,184,.15);
+  --green:#34d399;
+  --green-dim:rgba(52,211,153,.1);
+  --yellow:#fbbf24;
+  --yellow-dim:rgba(251,191,36,.1);
+  --red:#f87171;
+  --red-dim:rgba(248,113,113,.1);
+  --blue:#60a5fa;
+  --blue-dim:rgba(96,165,250,.1);
+  --purple:#a78bfa;
+  --radius:14px;
+  --radius-sm:10px;
+  --shadow-card:0 8px 32px rgba(0,0,0,.45),0 1px 2px rgba(0,0,0,.25);
+  --shadow-glow:0 0 60px rgba(91,214,184,.04);
+  --transition:all .2s ease
+}
+html,body{height:100%;overflow:hidden}
+body{
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale
+}
+body::before{
+  content:'';position:fixed;inset:0;
+  background:radial-gradient(ellipse at 20% 30%,rgba(91,214,184,.035) 0%,transparent 60%),
+             radial-gradient(ellipse at 80% 70%,rgba(96,165,250,.025) 0%,transparent 50%);
+  pointer-events:none;z-index:0
+}
+.dashboard{
+  position:relative;z-index:1;
+  width:1440px;max-width:calc(100vw - 48px);
+  height:calc(100vh - 48px);max-height:900px;
+  display:flex;flex-direction:column;
+  gap:20px;padding:24px 28px;
+  background:rgba(10,10,14,.5);
+  border:1px solid rgba(255,255,255,.03);
+  border-radius:24px;
+  box-shadow:0 0 0 1px rgba(255,255,255,.02),0 24px 80px rgba(0,0,0,.6)
+}
+
+/* ─── HEADER ─── */
+.header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 4px;flex-shrink:0
+}
+.header-left{display:flex;align-items:center;gap:16px}
+.header-logo{
+  width:38px;height:38px;border-radius:10px;
+  background:linear-gradient(135deg,rgba(91,214,184,.25),rgba(91,214,184,.08));
+  border:1px solid rgba(91,214,184,.2);
+  display:flex;align-items:center;justify-content:center;
+  color:var(--accent);flex-shrink:0
+}
+.header-logo svg{width:20px;height:20px}
+.header-title h1{
+  font-size:21px;font-weight:700;letter-spacing:-.3px;
+  background:linear-gradient(135deg,#fff 60%,rgba(255,255,255,.7));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent
+}
+.header-title p{
+  font-size:12px;color:var(--text-tertiary);font-weight:400;
+  letter-spacing:.15px;margin-top:-1px
+}
+.header-right{display:flex;align-items:center;gap:14px}
+.cloud-chip{
+  display:flex;align-items:center;gap:8px;
+  padding:7px 14px 7px 12px;
+  background:rgba(91,214,184,.08);
+  border:1px solid rgba(91,214,184,.2);
+  border-radius:100px;font-size:12px;font-weight:500;color:var(--accent)
+}
+.cloud-dot{
+  width:7px;height:7px;border-radius:50%;
+  background:var(--green);box-shadow:0 0 8px rgba(52,211,153,.5);
+  animation:pulse-dot 2s ease-in-out infinite
+}
+@keyframes pulse-dot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.6;transform:scale(.85)}}
+.cloud-chip svg{width:14px;height:14px;opacity:.8}
+
+/* ─── MAIN GRID ─── */
+.main{
+  flex:1;display:grid;grid-template-columns:1fr 400px;
+  gap:18px;min-height:0
+}
+@media(max-width:1200px){.main{grid-template-columns:1fr 340px}}
+
+/* ─── CARD BASE ─── */
+.card{
+  background:var(--surface);
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow-card);
+  display:flex;flex-direction:column;
+  overflow:hidden;transition:var(--transition)
+}
+.card:hover{border-color:var(--border-light);box-shadow:var(--shadow-card),0 0 0 1px rgba(255,255,255,.02)}
+.card-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:16px 20px 0;flex-shrink:0
+}
+.card-header h2{
+  font-size:14px;font-weight:600;letter-spacing:.2px;
+  color:var(--text);display:flex;align-items:center;gap:9px
+}
+.card-header h2 svg{width:17px;height:17px;color:var(--accent);opacity:.8}
+.card-badge{
+  font-size:11px;font-weight:500;padding:3px 10px;
+  border-radius:100px;background:rgba(255,255,255,.04);
+  color:var(--text-secondary);border:1px solid rgba(255,255,255,.04)
+}
+.card-body{flex:1;padding:14px 20px 18px;overflow-y:auto;min-height:0}
+.card-body::-webkit-scrollbar{width:3px}
+.card-body::-webkit-scrollbar-track{background:transparent}
+.card-body::-webkit-scrollbar-thumb{background:rgba(255,255,255,.08);border-radius:10px}
+
+/* ─── LEFT COLUMN ─── */
+.left-col{display:flex;flex-direction:column;gap:18px;min-height:0}
+.left-top{flex:1;min-height:0;display:flex}
+.left-bottom{flex-shrink:0;height:260px;display:flex;gap:18px}
+@media(max-height:800px){.left-bottom{height:220px}}
+
+/* ─── AI AGENT CONTROLLER ─── */
+.agent-card{flex:1}
+.agent-grid{
+  display:grid;grid-template-columns:1fr 1fr;
+  gap:10px;margin-top:6px
+}
+.agent-item{
+  display:flex;align-items:center;gap:12px;
+  padding:11px 14px;
+  background:rgba(255,255,255,.02);
+  border:1px solid rgba(255,255,255,.03);
+  border-radius:var(--radius-sm);
+  transition:var(--transition);cursor:default
+}
+.agent-item:hover{background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.06)}
+.agent-avatar{
+  width:32px;height:32px;border-radius:8px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:600;flex-shrink:0;
+  border:1px solid rgba(255,255,255,.06)
+}
+.agent-avatar.online{background:var(--green-dim);color:var(--green)}
+.agent-avatar.warning{background:var(--yellow-dim);color:var(--yellow)}
+.agent-avatar.standby{background:rgba(255,255,255,.03);color:var(--text-tertiary)}
+.agent-info{flex:1;min-width:0}
+.agent-name{font-size:13px;font-weight:500;color:var(--text)}
+.agent-detail{font-size:11px;color:var(--text-tertiary);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.agent-status{
+  display:flex;align-items:center;gap:5px;
+  font-size:11px;font-weight:500;flex-shrink:0
+}
+.status-dot{width:5px;height:5px;border-radius:50%}
+.status-dot.online{background:var(--green);box-shadow:0 0 6px rgba(52,211,153,.4)}
+.status-dot.warning{background:var(--yellow);box-shadow:0 0 6px rgba(251,191,36,.4)}
+.status-dot.standby{background:var(--text-tertiary)}
+.agent-footer{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:12px 20px 14px;border-top:1px solid var(--border);
+  flex-shrink:0
+}
+.agent-stats{display:flex;gap:20px}
+.agent-stat{text-align:center}
+.agent-stat-value{font-size:16px;font-weight:700;color:var(--text);line-height:1}
+.agent-stat-label{font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.6px;margin-top:3px}
+.agent-actions{display:flex;gap:8px}
+.btn{
+  padding:7px 16px;border-radius:8px;font-size:12px;font-weight:500;
+  border:1px solid var(--border-light);background:rgba(255,255,255,.03);
+  color:var(--text-secondary);cursor:default;transition:var(--transition);
+  display:flex;align-items:center;gap:6px
+}
+.btn:hover{background:rgba(255,255,255,.06);color:var(--text)}
+.btn-primary{
+  background:var(--accent-dim);border-color:var(--border-accent);
+  color:var(--accent)
+}
+.btn-primary:hover{background:rgba(91,214,184,.2)}
+
+/* ─── ONBOARD EDGE STREAM ─── */
+.edge-card{width:32%;flex-shrink:0}
+.stream-list{display:flex;flex-direction:column;gap:8px;margin-top:4px}
+.stream-item{
+  display:flex;align-items:center;gap:10px;
+  padding:8px 10px;border-radius:8px;
+  background:rgba(255,255,255,.015);
+  border:1px solid rgba(255,255,255,.03)
+}
+.stream-icon{
+  width:28px;height:28px;border-radius:6px;
+  background:rgba(96,165,250,.08);color:var(--blue);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0
+}
+.stream-icon svg{width:14px;height:14px}
+.stream-info{flex:1;min-width:0}
+.stream-name{font-size:12px;font-weight:500;color:var(--text)}
+.stream-meta{font-size:10px;color:var(--text-tertiary);margin-top:1px}
+.stream-state{
+  font-size:10px;font-weight:500;padding:2px 7px;
+  border-radius:100px;flex-shrink:0
+}
+.stream-state.stable{background:var(--green-dim);color:var(--green)}
+.stream-state.buffer{background:var(--yellow-dim);color:var(--yellow)}
+.edge-footer{
+  display:flex;justify-content:space-between;
+  padding:10px 16px 12px;border-top:1px solid var(--border);
+  font-size:11px;color:var(--text-tertiary);flex-shrink:0
+}
+.edge-footer span{display:flex;align-items:center;gap:4px}
+.edge-footer strong{color:var(--text-secondary);font-weight:500}
+
+/* ─── CHATBOT ─── */
+.chat-card{flex:1;display:flex;flex-direction:column}
+.chat-messages{
+  flex:1;display:flex;flex-direction:column;
+  gap:10px;padding:6px 0;overflow-y:auto;min-height:0
+}
+.chat-messages::-webkit-scrollbar{width:3px}
+.chat-messages::-webkit-scrollbar-track{background:transparent}
+.chat-messages::-webkit-scrollbar-thumb{background:rgba(255,255,255,.08);border-radius:10px}
+.chat-msg{
+  display:flex;gap:10px;max-width:92%;
+  padding:10px 14px;border-radius:12px;font-size:12.5px;line-height:1.55
+}
+.chat-msg.bot{
+  align-self:flex-start;
+  background:rgba(255,255,255,.03);
+  border:1px solid rgba(255,255,255,.04);
+  border-bottom-left-radius:4px;color:var(--text-secondary)
+}
+.chat-msg.user{
+  align-self:flex-end;
+  background:var(--accent-dim);
+  border:1px solid var(--border-accent);
+  border-bottom-right-radius:4px;color:var(--text)
+}
+.chat-msg .msg-label{
+  font-size:10px;font-weight:600;text-transform:uppercase;
+  letter-spacing:.4px;margin-bottom:3px;display:block
+}
+.chat-msg.bot .msg-label{color:var(--accent)}
+.chat-msg.user .msg-label{color:rgba(255,255,255,.5)}
+.chat-msg.cam-response{
+  background:rgba(91,214,184,.05);
+  border-color:rgba(91,214,184,.12)
+}
+.chat-msg .cam-tag{
+  display:inline-flex;align-items:center;gap:4px;
+  font-size:10px;font-weight:500;color:var(--accent);
+  background:rgba(91,214,184,.12);padding:1px 8px;
+  border-radius:4px;margin:4px 0 2px
+}
+.chat-msg .cam-tag svg{width:11px;height:11px}
+.typing-indicator{
+  align-self:flex-start;display:flex;gap:4px;
+  padding:10px 16px;background:rgba(255,255,255,.02);
+  border-radius:12px;border:1px solid rgba(255,255,255,.03)
+}
+.typing-indicator span{
+  width:5px;height:5px;border-radius:50%;
+  background:var(--text-tertiary);
+  animation:typing 1.4s ease-in-out infinite
+}
+.typing-indicator span:nth-child(2){animation-delay:.2s}
+.typing-indicator span:nth-child(3){animation-delay:.4s}
+@keyframes typing{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-5px)}}
+.chat-input-wrap{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 16px;margin-top:8px;
+  background:rgba(255,255,255,.025);
+  border:1px solid var(--border-light);
+  border-radius:12px;flex-shrink:0;
+  transition:var(--transition)
+}
+.chat-input-wrap:focus-within{
+  border-color:rgba(91,214,184,.25);
+  background:rgba(91,214,184,.03);
+  box-shadow:0 0 0 3px rgba(91,214,184,.06)
+}
+.chat-input-wrap input{
+  flex:1;background:transparent;border:none;outline:none;
+  color:var(--text);font-size:13px;font-family:'Inter',sans-serif;
+  padding:6px 0
+}
+.chat-input-wrap input::placeholder{color:var(--text-tertiary)}
+.chat-send-btn{
+  width:34px;height:34px;border-radius:8px;
+  background:var(--accent-dim);border:1px solid var(--border-accent);
+  color:var(--accent);display:flex;align-items:center;justify-content:center;
+  cursor:default;transition:var(--transition);flex-shrink:0
+}
+.chat-send-btn:hover{background:rgba(91,214,184,.2)}
+.chat-send-btn svg{width:16px;height:16px}
+.chat-footer{
+  display:flex;justify-content:space-between;
+  padding:8px 16px 0;font-size:10px;color:var(--text-tertiary);
+  flex-shrink:0
+}
+.chat-footer span{display:flex;align-items:center;gap:4px}
+
+/* ─── RIGHT COLUMN ─── */
+.right-col{display:flex;flex-direction:column;gap:18px;min-height:0}
+.right-top{flex:1;min-height:0;display:flex}
+.right-bottom{flex:1;min-height:0;display:flex}
+
+/* ─── LIVE EVENT FEED ─── */
+.event-card{flex:1}
+.event-list{display:flex;flex-direction:column;gap:6px;margin-top:4px}
+.event-item{
+  display:flex;align-items:center;gap:12px;
+  padding:9px 12px;border-radius:10px;
+  background:rgba(255,255,255,.015);
+  border:1px solid rgba(255,255,255,.03);
+  transition:var(--transition);cursor:default
+}
+.event-item:hover{background:rgba(255,255,255,.03)}
+.event-time{font-size:11px;font-weight:500;color:var(--text-tertiary);width:52px;flex-shrink:0}
+.event-type-badge{
+  width:6px;height:6px;border-radius:50%;flex-shrink:0
+}
+.event-type-badge.medium{background:var(--yellow);box-shadow:0 0 6px rgba(251,191,36,.3)}
+.event-type-badge.high{background:var(--red);box-shadow:0 0 6px rgba(248,113,113,.3)}
+.event-type-badge.info{background:var(--blue);box-shadow:0 0 6px rgba(96,165,250,.3)}
+.event-type-badge.critical{background:var(--red);box-shadow:0 0 8px rgba(248,113,113,.5)}
+.event-type-badge.warning{background:var(--yellow);box-shadow:0 0 6px rgba(251,191,36,.3)}
+.event-detail{flex:1;min-width:0}
+.event-title{font-size:12px;font-weight:500;color:var(--text)}
+.event-source{font-size:10px;color:var(--text-tertiary);margin-top:1px}
+.event-severity{
+  font-size:10px;font-weight:500;padding:2px 8px;
+  border-radius:100px;flex-shrink:0
+}
+.event-severity.medium{background:var(--yellow-dim);color:var(--yellow)}
+.event-severity.high{background:var(--red-dim);color:var(--red)}
+.event-severity.info{background:var(--blue-dim);color:var(--blue)}
+.event-severity.critical{background:var(--red-dim);color:var(--red);border:1px solid rgba(248,113,113,.2)}
+.event-severity.warning{background:var(--yellow-dim);color:var(--yellow)}
+
+/* ─── BANDWIDTH & COMPUTE ─── */
+.bandwidth-card{flex:1}
+.metrics-grid{
+  display:grid;grid-template-columns:1fr 1fr;
+  gap:12px;margin-top:6px
+}
+.metric-card{
+  padding:12px 14px;
+  background:rgba(255,255,255,.02);
+  border:1px solid rgba(255,255,255,.03);
+  border-radius:var(--radius-sm)
+}
+.metric-label{font-size:11px;color:var(--text-tertiary);font-weight:500;margin-bottom:6px;display:flex;align-items:center;justify-content:space-between}
+.metric-label svg{width:14px;height:14px;opacity:.5}
+.metric-value{font-size:20px;font-weight:700;color:var(--text);letter-spacing:-.3px}
+.metric-value .unit{font-size:12px;font-weight:400;color:var(--text-tertiary);margin-left:2px}
+.metric-bar-wrap{margin-top:8px;height:4px;background:rgba(255,255,255,.04);border-radius:4px;overflow:hidden}
+.metric-bar-fill{height:100%;border-radius:4px;transition:width 1s ease}
+.metric-bar-fill.bandwidth{background:linear-gradient(90deg,var(--accent),rgba(91,214,184,.4));width:68%}
+.metric-bar-fill.compute{background:linear-gradient(90deg,var(--blue),rgba(96,165,250,.4));width:78%}
+.metric-sub{font-size:11px;color:var(--text-tertiary);margin-top:6px;display:flex;justify-content:space-between}
+.metric-sub span{display:flex;align-items:center;gap:4px}
+.efficiency-row{
+  display:flex;align-items:center;gap:16px;
+  padding:12px 14px;margin-top:6px;
+  background:rgba(91,214,184,.04);
+  border:1px solid rgba(91,214,184,.1);
+  border-radius:var(--radius-sm)
+}
+.eff-score{
+  font-size:28px;font-weight:800;color:var(--accent);
+  line-height:1;letter-spacing:-.5px
+}
+.eff-label{font-size:11px;color:var(--text-secondary)}
+.eff-details{flex:1;display:flex;gap:16px}
+.eff-detail{text-align:center}
+.eff-detail-value{font-size:13px;font-weight:600;color:var(--text)}
+.eff-detail-label{font-size:10px;color:var(--text-tertiary);margin-top:1px}
+.sparkline-wrap{display:flex;align-items:flex-end;gap:2px;height:28px;margin-top:6px}
+.sparkline-bar{
+  width:6px;border-radius:2px 2px 0 0;
+  background:linear-gradient(to top,var(--accent),rgba(91,214,184,.3));
+  transition:height .5s ease
+}
+.sparkline-bar:nth-child(1){height:12px}
+.sparkline-bar:nth-child(2){height:18px}
+.sparkline-bar:nth-child(3){height:8px}
+.sparkline-bar:nth-child(4){height:22px}
+.sparkline-bar:nth-child(5){height:16px}
+.sparkline-bar:nth-child(6){height:26px}
+.sparkline-bar:nth-child(7){height:14px}
+.sparkline-bar:nth-child(8){height:20px}
+.sparkline-bar:nth-child(9){height:10px}
+.sparkline-bar:nth-child(10){height:24px}
+.sparkline-bar:nth-child(11){height:18px}
+.sparkline-bar:nth-child(12){height:28px}
+.sparkline-bar:nth-child(13){height:14px}
+.sparkline-bar:nth-child(14){height:20px}
+
+/* ─── BANDWIDTH CARD SCROLLBAR ─── */
+.bandwidth-card .card-body{overflow-y:auto}
+.bandwidth-card .card-body::-webkit-scrollbar{width:3px}
+.bandwidth-card .card-body::-webkit-scrollbar-track{background:transparent}
+.bandwidth-card .card-body::-webkit-scrollbar-thumb{background:rgba(255,255,255,.08);border-radius:10px}
+
+/* ─── STATUS ROW IN HEADER ─── */
+.status-mini{display:flex;gap:12px}
+.status-mini-item{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text-tertiary)}
+.status-mini-dot{width:5px;height:5px;border-radius:50%}
+.status-mini-dot.green{background:var(--green)}
+.status-mini-dot.yellow{background:var(--yellow)}
+.status-mini-dot.red{background:var(--red)}
+
+/* ─── MISC ─── */
+.mt-1{margin-top:4px}
+.mt-2{margin-top:8px}
+.text-accent{color:var(--accent)}
+.text-secondary{color:var(--text-secondary)}
+.text-tertiary{color:var(--text-tertiary)}
+.text-sm{font-size:11px}
+.flex{display:flex}
+.items-center{align-items:center}
+.gap-2{gap:8px}
+.gap-3{gap:12px}
+</style>
+</head>
+<body>
+
+<div class="dashboard">
+
+  <!-- ═══════ HEADER ═══════ -->
+  <header class="header">
+    <div class="header-left">
+      <div class="header-logo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="18" height="18" rx="4"/>
+          <path d="M9 9l6 6M15 9l-6 6"/>
+          <circle cx="12" cy="12" r="2" fill="currentColor" stroke="none"/>
+        </svg>
+      </div>
+      <div class="header-title">
+        <h1>AgentGrid Dashboard</h1>
+        <p>Multi-Agent Video Intelligence Control &amp; Analytics &middot; Powered by edge processing, unified in the cloud.</p>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="status-mini">
+        <span class="status-mini-item"><span class="status-mini-dot green"></span>24 Agents</span>
+        <span class="status-mini-item"><span class="status-mini-dot yellow"></span>3 Alerts</span>
+      </div>
+      <div class="cloud-chip">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M2.25 15a4.5 4.5 0 004.5 4.5H18a3.75 3.75 0 001.332-7.257 3 3 0 00-3.758-3.848 5.25 5.25 0 00-10.233 2.33A4.502 4.502 0 002.25 15z"/>
+        </svg>
+        <span class="cloud-dot"></span>
+        Cloud-Sync &middot; Live
+      </div>
+    </div>
+  </header>
+
+  <!-- ═══════ MAIN GRID ═══════ -->
+  <div class="main">
+
+    <!-- ─── LEFT COLUMN ─── -->
+    <div class="left-col">
+
+      <!-- AI AGENT CONTROLLER -->
+      <div class="left-top">
+        <div class="card agent-card">
+          <div class="card-header">
+            <h2>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="4" y="4" width="16" height="16" rx="2"/>
+                <path d="M9 9h6v6H9z"/>
+                <path d="M12 2v2M12 20v2M2 12h2M20 12h2M6 2v2M18 2v2M6 20v2M18 20v2"/>
+              </svg>
+              AI Agent Controller
+            </h2>
+            <span class="card-badge">5 active</span>
+          </div>
+          <div class="card-body">
+            <div class="agent-grid">
+              <div class="agent-item">
+                <div class="agent-avatar online">P</div>
+                <div class="agent-info">
+                  <div class="agent-name">Agent-Phoenix</div>
+                  <div class="agent-detail">Cam: Entrance-01 &middot; 12h uptime</div>
+                </div>
+                <div class="agent-status"><span class="status-dot online"></span>Online</div>
+              </div>
+              <div class="agent-item">
+                <div class="agent-avatar online">O</div>
+                <div class="agent-info">
+                  <div class="agent-name">Agent-Omega</div>
+                  <div class="agent-detail">Cam: Warehouse-03 &middot; 8h uptime</div>
+                </div>
+                <div class="agent-status"><span class="status-dot online"></span>Online</div>
+              </div>
+              <div class="agent-item">
+                <div class="agent-avatar warning">A</div>
+                <div class="agent-info">
+                  <div class="agent-name">Agent-Atlas</div>
+                  <div class="agent-detail">Cam: Parking-B2 &middot; Drift detected</div>
+                </div>
+                <div class="agent-status"><span class="status-dot warning"></span>Warning</div>
+              </div>
+              <div class="agent-item">
+                <div class="agent-avatar online">N</div>
+                <div class="agent-info">
+                  <div class="agent-name">Agent-Nexus</div>
+                  <div class="agent-detail">Cam: Server-A5 &middot; 24h uptime</div>
+                </div>
+                <div class="agent-status"><span class="status-dot online"></span>Online</div>
+              </div>
+              <div class="agent-item">
+                <div class="agent-avatar online">V</div>
+                <div class="agent-info">
+                  <div class="agent-name">Agent-Vector</div>
+                  <div class="agent-detail">Cam: Rooftop-D1 &middot; 6h uptime</div>
+                </div>
+                <div class="agent-status"><span class="status-dot online"></span>Online</div>
+              </div>
+              <div class="agent-item">
+                <div class="agent-avatar standby">S</div>
+                <div class="agent-info">
+                  <div class="agent-name">Agent-Spectra</div>
+                  <div class="agent-detail">Cam: (unassigned) &middot; Standby</div>
+                </div>
+                <div class="agent-status"><span class="status-dot standby"></span>Standby</div>
+              </div>
+            </div>
+          </div>
+          <div class="agent-footer">
+            <div class="agent-stats">
+              <div class="agent-stat"><div class="agent-stat-value">6</div><div class="agent-stat-label">Agents</div></div>
+              <div class="agent-stat"><div class="agent-stat-value">4</div><div class="agent-stat-label">Online</div></div>
+              <div class="agent-stat"><div class="agent-stat-value">98.3%</div><div class="agent-stat-label">Uptime</div></div>
+            </div>
+            <div class="agent-actions">
+              <div class="btn btn-primary">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:14px;height:14px">
+                  <path d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z"/>
+                </svg>
+                Deploy All
+              </div>
+              <div class="btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:14px;height:14px">
+                  <path d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z"/>
+                  <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                </svg>
+                Configure
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- LOWER LEFT: ONBOARD EDGE STREAM + CHATBOT -->
+      <div class="left-bottom">
+        <div class="card edge-card">
+          <div class="card-header" style="padding-bottom:0">
+            <h2>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M15.75 10.5l4.72-4.72a.75.75 0 011.28.53v11.38a.75.75 0 01-1.28.53l-4.72-4.72M4.5 18.75h9.75a2.25 2.25 0 002.25-2.25V7.5a2.25 2.25 0 00-2.25-2.25H4.5A2.25 2.25 0 002.25 7.5v9a2.25 2.25 0 002.25 2.25z"/>
+              </svg>
+              Onboard Edge
+            </h2>
+          </div>
+          <div class="card-body" style="padding-top:10px">
+            <div class="stream-list">
+              <div class="stream-item">
+                <div class="stream-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M15.75 10.5l4.72-4.72a.75.75 0 011.28.53v11.38a.75.75 0 01-1.28.53l-4.72-4.72"/>
+                  </svg>
+                </div>
+                <div class="stream-info">
+                  <div class="stream-name">Camera-01-East</div>
+                  <div class="stream-meta">1080p &middot; 30fps &middot; 48h uptime</div>
+                </div>
+                <span class="stream-state stable">Stable</span>
+              </div>
+              <div class="stream-item">
+                <div class="stream-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M15.75 10.5l4.72-4.72a.75.75 0 011.28.53v11.38a.75.75 0 01-1.28.53l-4.72-4.72"/>
+                  </svg>
+                </div>
+                <div class="stream-info">
+                  <div class="stream-name">Camera-02-Warehouse</div>
+                  <div class="stream-meta">4K &middot; 15fps &middot; 24h uptime</div>
+                </div>
+                <span class="stream-state stable">Stable</span>
+              </div>
+              <div class="stream-item">
+                <div class="stream-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M15.75 10.5l4.72-4.72a.75.75 0 011.28.53v11.38a.75.75 0 01-1.28.53l-4.72-4.72"/>
+                  </svg>
+                </div>
+                <div class="stream-info">
+                  <div class="stream-name">Camera-03-Parking</div>
+                  <div class="stream-meta">1080p &middot; 30fps &middot; 6h uptime</div>
+                </div>
+                <span class="stream-state buffer">Buffer</span>
+              </div>
+              <div class="stream-item">
+                <div class="stream-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M15.75 10.5l4.72-4.72a.75.75 0 011.28.53v11.38a.75.75 0 01-1.28.53l-4.72-4.72"/>
+                  </svg>
+                </div>
+                <div class="stream-info">
+                  <div class="stream-name">Camera-04-Server</div>
+                  <div class="stream-meta">720p &middot; 60fps &middot; 72h uptime</div>
+                </div>
+                <span class="stream-state stable">Stable</span>
+              </div>
+            </div>
+          </div>
+          <div class="edge-footer">
+            <span><strong>4</strong> active streams</span>
+            <span><strong>3</strong> stable &middot; <strong>1</strong> buffering</span>
+          </div>
+        </div>
+
+        <!-- ASK YOUR CAMERAS CHATBOT (LARGER) -->
+        <div class="card chat-card">
+          <div class="card-header">
+            <h2>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 18v-5.25m0 0a6.01 6.01 0 001.5-.189m-1.5.189a6.01 6.01 0 01-1.5-.189m3.75 7.478a12.06 12.06 0 01-4.5 0m3.75 2.383a14.406 14.406 0 01-3 0M14.25 18v-.192c0-.983.658-1.823 1.508-2.316a7.5 7.5 0 10-7.517 0c.85.493 1.509 1.333 1.509 2.316V18"/>
+              </svg>
+              Ask Your Cameras
+            </h2>
+            <span class="card-badge">AI Ready</span>
+          </div>
+          <div class="card-body" style="display:flex;flex-direction:column;padding-top:10px">
+            <div class="chat-messages">
+              <div class="chat-msg bot">
+                <span class="msg-label">AgentGrid AI</span>
+                I'm analyzing all active feeds. Camera-01-East shows routine motion patterns. No anomalies detected across monitored sectors.
+              </div>
+              <div class="chat-msg user">
+                <span class="msg-label">You</span>
+                Show me the last 8 minutes from Parking-B2 and check for any vehicle loitering.
+              </div>
+              <div class="chat-msg bot cam-response">
+                <span class="msg-label">AgentGrid AI</span>
+                <span class="cam-tag">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M15.75 10.5l4.72-4.72a.75.75 0 011.28.53v11.38a.75.75 0 01-1.28.53l-4.72-4.72"/>
+                  </svg>
+                  Camera-03-Parking
+                </span>
+                Querying Agent-Atlas. Footage from Parking-B2 (last 8 min) — 3 vehicle detections, 1 pedestrian at 22:14:03. No loitering patterns identified. All clear.
+              </div>
+              <div class="chat-msg user">
+                <span class="msg-label">You</span>
+                Pull thermal readings from Server-A5 and alert if any rack exceeds 78&deg;F.
+              </div>
+              <div class="typing-indicator">
+                <span></span><span></span><span></span>
+              </div>
+            </div>
+            <div class="chat-input-wrap">
+              <input type="text" placeholder="Ask about any camera feed, agent status, or historical footage..." value="Check anomaly logs for Warehouse-03 in the last">
+              <div class="chat-send-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5"/>
+                </svg>
+              </div>
+            </div>
+            <div class="chat-footer">
+              <span>Connected to <strong>6</strong> edge agents</span>
+              <span>Response &lt; 320ms</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── RIGHT COLUMN ─── -->
+    <div class="right-col">
+
+      <!-- LIVE EVENT FEED -->
+      <div class="right-top">
+        <div class="card event-card">
+          <div class="card-header">
+            <h2>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0"/>
+              </svg>
+              Live Event Feed
+            </h2>
+            <span class="card-badge">6 new</span>
+          </div>
+          <div class="card-body">
+            <div class="event-list">
+              <div class="event-item">
+                <span class="event-time">22:14:23</span>
+                <span class="event-type-badge medium"></span>
+                <div class="event-detail">
+                  <div class="event-title">Motion Alert &mdash; Sector 4</div>
+                  <div class="event-source">Camera-01-East</div>
+                </div>
+                <span class="event-severity medium">Medium</span>
+              </div>
+              <div class="event-item">
+                <span class="event-time">22:12:07</span>
+                <span class="event-type-badge high"></span>
+                <div class="event-detail">
+                  <div class="event-title">Object Detection &mdash; Unauthorized</div>
+                  <div class="event-source">Camera-03-West</div>
+                </div>
+                <span class="event-severity high">High</span>
+              </div>
+              <div class="event-item">
+                <span class="event-time">22:08:45</span>
+                <span class="event-type-badge warning"></span>
+                <div class="event-detail">
+                  <div class="event-title">Stream Interruption</div>
+                  <div class="event-source">Camera-03-Parking</div>
+                </div>
+                <span class="event-severity warning">Warning</span>
+              </div>
+              <div class="event-item">
+                <span class="event-time">22:05:12</span>
+                <span class="event-type-badge info"></span>
+                <div class="event-detail">
+                  <div class="event-title">AI Analysis Complete</div>
+                  <div class="event-source">Agent-Phoenix</div>
+                </div>
+                <span class="event-severity info">Info</span>
+              </div>
+              <div class="event-item">
+                <span class="event-time">22:01:33</span>
+                <span class="event-type-badge critical"></span>
+                <div class="event-detail">
+                  <div class="event-title">Anomaly Detected &mdash; Temperature</div>
+                  <div class="event-source">Sensor-Rack-A5</div>
+                </div>
+                <span class="event-severity critical">Critical</span>
+              </div>
+              <div class="event-item">
+                <span class="event-time">21:58:00</span>
+                <span class="event-type-badge warning"></span>
+                <div class="event-detail">
+                  <div class="event-title">Bandwidth Spike &gt; 480 Mbps</div>
+                  <div class="event-source">Network-02</div>
+                </div>
+                <span class="event-severity warning">Warning</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- BANDWIDTH & COMPUTE EFFICIENCY -->
+      <div class="right-bottom">
+        <div class="card bandwidth-card">
+          <div class="card-header">
+            <h2>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z"/>
+              </svg>
+              Bandwidth &amp; Compute
+            </h2>
+            <span class="card-badge">Last 30m</span>
+          </div>
+          <div class="card-body" style="padding-top:10px">
+            <div class="metrics-grid">
+              <div class="metric-card">
+                <div class="metric-label">
+                  Bandwidth Utilization
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M8.288 15.038a5.25 5.25 0 017.424 0M5.106 11.856c3.807-3.808 9.98-3.808 13.788 0M1.924 8.674c5.565-5.565 14.587-5.565 20.152 0"/>
+                  </svg>
+                </div>
+                <div class="metric-value">342<span class="unit">Mbps</span></div>
+                <div class="metric-bar-wrap"><div class="metric-bar-fill bandwidth"></div></div>
+                <div class="metric-sub"><span>Peak: 480 Mbps</span><span>68%</span></div>
+              </div>
+              <div class="metric-card">
+                <div class="metric-label">
+                  Compute Utilization
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <rect x="4" y="4" width="16" height="16" rx="2"/>
+                    <path d="M9 9h6v6H9z"/>
+                  </svg>
+                </div>
+                <div class="metric-value">78<span class="unit">%</span></div>
+                <div class="metric-bar-wrap"><div class="metric-bar-fill compute"></div></div>
+                <div class="metric-sub"><span>12ms avg latency</span><span>78%</span></div>
+              </div>
+            </div>
+            <div class="efficiency-row">
+              <div>
+                <div class="eff-score">94.2%</div>
+                <div class="eff-label">Efficiency Score</div>
+              </div>
+              <div class="eff-details">
+                <div class="eff-detail"><div class="eff-detail-value">96.8%</div><div class="eff-detail-label">Stream Health</div></div>
+                <div class="eff-detail"><div class="eff-detail-value">21</div><div class="eff-detail-label">Edge Nodes</div></div>
+                <div class="eff-detail"><div class="eff-detail-value">1.2s</div><div class="eff-detail-label">Avg Response</div></div>
+              </div>
+            </div>
+            <div style="margin-top:8px;padding:0 2px">
+              <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text-tertiary);margin-bottom:4px">
+                <span>Bandwidth Trend (last 14 min)</span>
+                <span>+5.2% &uarr;</span>
+              </div>
+              <div class="sparkline-wrap">
+                <div class="sparkline-bar"></div>
+                <div class="sparkline-bar"></div>
+                <div class="sparkline-bar"></div>
+                <div class="sparkline-bar"></div>
+                <div class="sparkline-bar"></div>
+                <div class="sparkline-bar"></div>
+                <div class="sparkline-bar"></div>
+                <div class="sparkline-bar"></div>
+                <div class="sparkline-bar"></div>
+                <div class="sparkline-bar"></div>
+                <div class="sparkline-bar"></div>
+                <div class="sparkline-bar"></div>
+                <div class="sparkline-bar"></div>
+                <div class="sparkline-bar"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>

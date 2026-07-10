@@ -105,7 +105,7 @@ def ask_ollama(question: str, events: list) -> str:
     
     url = "http://localhost:11434/api/generate"
     data = {
-        "model": "llama3",
+        "model": "deepseek-r1:1.5b",
         "prompt": prompt,
         "stream": False
     }
@@ -117,12 +117,12 @@ def ask_ollama(question: str, events: list) -> str:
             headers={"Content-Type": "application/json"},
             method="POST"
         )
-        with urllib.request.urlopen(req, timeout=15) as response:
+        with urllib.request.urlopen(req, timeout=60) as response:
             res_data = json.loads(response.read().decode("utf-8"))
             return res_data.get("response", "").strip()
     except Exception as e:
         logging.error(f"Failed to communicate with local Ollama: {e}")
-        return f"Error: Local Ollama model failed to respond. (Is Ollama running locally with llama3.2:1b? Details: {e})"
+        return f"Error: Local Ollama model failed to respond. (Is Ollama running locally with deepseek-r1:1.5b? Details: {e})"
 
 def ask_agent_query(question: str):
     """Executes the complete 2-step pipeline."""

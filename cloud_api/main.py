@@ -39,6 +39,14 @@ async def create_event(event: Event):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
+@app.get("/api/events")
+async def get_events(limit: int = 50):
+    try:
+        events = db.get_recent_events(limit)
+        return events
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+
 @app.websocket("/ws/live")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
@@ -63,6 +71,14 @@ async def toggle_agent(camera_id: str, agent_name: str, enabled: bool = Body(...
     try:
         db.set_agent_config(camera_id, agent_name, enabled)
         return {"status": "success", "message": f"Agent {agent_name} set to {enabled} for camera {camera_id}"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+
+@app.get("/api/cameras")
+async def get_cameras():
+    try:
+        cameras = db.get_cameras()
+        return cameras
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
