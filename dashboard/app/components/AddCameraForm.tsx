@@ -58,18 +58,18 @@ export default function AddCameraForm({ onCameraAdded }: { onCameraAdded: () => 
   };
 
   return (
-    <div className="bg-white/5 backdrop-blur-lg rounded-3xl border border-white/10 p-6 md:p-8 shadow-2xl transition-all duration-300 hover:shadow-purple-500/5 hover:border-white/20">
+    <div className="bg-white rounded-3xl border border-[#e2e8f0] p-6 shadow-sm">
       <div>
-        <h2 className="text-xl md:text-2xl font-bold bg-gradient-to-r from-purple-200 via-pink-200 to-rose-200 bg-clip-text text-transparent">
+        <h2 className="text-[20px] font-bold text-[#0f172a] tracking-tight">
           Onboard Edge Stream
         </h2>
-        <p className="text-sm text-slate-400 mt-1">Register a local RTSP feed or simulated loop</p>
+        <p className="text-[13px] text-[#64748b] font-medium mt-0.5">Register a local RTSP feed</p>
       </div>
 
-      <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+      <form onSubmit={handleSubmit} className="mt-5 space-y-4">
         <div>
-          <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
-            Camera Display Name
+          <label className="block text-[11px] font-bold text-[#475569] uppercase tracking-wider mb-1.5">
+            CAMERA NAME
           </label>
           <input
             type="text"
@@ -77,13 +77,13 @@ export default function AddCameraForm({ onCameraAdded }: { onCameraAdded: () => 
             value={name}
             onChange={(e) => setName(e.target.value)}
             disabled={submitting}
-            className="w-full bg-slate-900/50 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-500 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all font-sans"
+            className="w-full bg-[#f1f5f9] border border-[#e2e8f0] rounded-xl px-4 py-3 text-[#0f172a] placeholder-[#94a3b8] outline-none focus:border-[#4f46e5] focus:ring-1 focus:ring-[#4f46e5] transition-all font-sans text-[14px]"
           />
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
-            RTSP Stream URL
+          <label className="block text-[11px] font-bold text-[#475569] uppercase tracking-wider mb-1.5">
+            RTSP URL
           </label>
           <input
             type="text"
@@ -91,7 +91,7 @@ export default function AddCameraForm({ onCameraAdded }: { onCameraAdded: () => 
             value={rtspUrl}
             onChange={(e) => setRtspUrl(e.target.value)}
             disabled={submitting}
-            className="w-full bg-slate-900/50 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-500 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all font-mono text-sm"
+            className="w-full bg-[#f1f5f9] border border-[#e2e8f0] rounded-xl px-4 py-3 text-[#0f172a] placeholder-[#94a3b8] outline-none focus:border-[#4f46e5] focus:ring-1 focus:ring-[#4f46e5] transition-all font-mono text-[13px]"
           />
         </div>
 
@@ -99,8 +99,8 @@ export default function AddCameraForm({ onCameraAdded }: { onCameraAdded: () => 
           <div
             className={`p-3 rounded-xl text-xs font-semibold border ${
               status.type === 'success'
-                ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-300'
-                : 'bg-rose-500/10 border-rose-500/20 text-rose-300'
+                ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                : 'bg-rose-50 border-rose-200 text-rose-800'
             }`}
           >
             {status.message}
@@ -110,9 +110,12 @@ export default function AddCameraForm({ onCameraAdded }: { onCameraAdded: () => 
         <button
           type="submit"
           disabled={submitting}
-          className="w-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:from-indigo-600 hover:via-purple-600 hover:to-pink-600 text-white font-bold py-3 px-4 rounded-xl shadow-lg shadow-purple-500/25 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full bg-[#3b2fc9] hover:bg-[#2e24a8] text-white font-bold py-3 px-4 rounded-xl transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-[14px]"
         >
-          {submitting ? 'Registering Stream...' : 'Register Camera Feed'}
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
+          </svg>
+          {submitting ? 'Registering...' : 'Register Feed'}
         </button>
       </form>
     </div>

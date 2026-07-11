@@ -47,7 +47,6 @@ export default function AgentToggle({ refreshTrigger }: { refreshTrigger: number
     return () => clearInterval(interval);
   }, [refreshTrigger, fetchData]);
 
-
   const handleToggle = async (cameraId: string, agentName: string, currentVal: boolean) => {
     const toggleKey = `${cameraId}-${agentName}`;
     setToggling(toggleKey);
@@ -85,8 +84,8 @@ export default function AgentToggle({ refreshTrigger }: { refreshTrigger: number
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center p-8 bg-white/5 backdrop-blur-md rounded-2xl border border-white/10 shadow-xl min-h-[250px]">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-400"></div>
+      <div className="flex items-center justify-center p-8 bg-white rounded-3xl border border-[#e2e8f0] shadow-sm min-h-[200px]">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#4f46e5]"></div>
       </div>
     );
   }
@@ -94,47 +93,46 @@ export default function AgentToggle({ refreshTrigger }: { refreshTrigger: number
   const agentsList = ['intrusion_detection', 'productivity_tracker'];
 
   return (
-    <div className="bg-white/5 backdrop-blur-lg rounded-3xl border border-white/10 p-6 md:p-8 shadow-2xl transition-all duration-300 hover:shadow-indigo-500/5 hover:border-white/20">
+    <div className="bg-white rounded-3xl border border-[#e2e8f0] p-6 shadow-sm">
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h2 className="text-xl md:text-2xl font-bold bg-gradient-to-r from-indigo-200 via-purple-200 to-pink-200 bg-clip-text text-transparent">
+          <h2 className="text-[20px] font-bold text-[#0f172a] tracking-tight">
             AI Agent Controller
           </h2>
-          <p className="text-sm text-slate-400 mt-1">Activate or deactivate models per camera stream</p>
+          <p className="text-[13px] text-[#64748b] font-medium mt-0.5">Activate or deactivate models per camera stream</p>
         </div>
         <button
           onClick={fetchData}
-          className="p-2 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 rounded-lg border border-indigo-500/20 transition-all active:scale-95"
+          className="p-2.5 bg-[#f1f5f9] hover:bg-[#e2e8f0] text-[#0f172a] rounded-xl transition-all active:scale-95"
         >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.253 8H18" />
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
           </svg>
         </button>
       </div>
 
       {cameras.length === 0 ? (
-        <div className="text-center py-12 bg-slate-900/40 rounded-2xl border border-white/5">
-          <p className="text-slate-400">No cameras registered yet.</p>
-          <p className="text-xs text-slate-500 mt-2">Use the &quot;Add Camera&quot; form to onboard your first stream.</p>
+        <div className="text-center py-10 bg-[#f8f9fc] rounded-2xl border border-[#e2e8f0]">
+          <p className="text-[#64748b] text-[13px] font-medium">No cameras registered yet.</p>
         </div>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse font-sans">
             <thead>
-              <tr className="border-b border-white/10 text-slate-300">
-                <th className="pb-4 font-semibold">Camera</th>
-                <th className="pb-4 font-semibold text-center">Intrusion Detection</th>
-                <th className="pb-4 font-semibold text-center">Productivity Tracker</th>
+              <tr className="border-b border-[#e2e8f0] text-[#475569] text-[13px] font-bold">
+                <th className="pb-3 pr-4 font-bold">Camera</th>
+                <th className="pb-3 text-center font-bold">Intrusion</th>
+                <th className="pb-3 text-center font-bold">Productivity</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/5">
+            <tbody className="divide-y divide-[#f1f5f9]">
               {cameras.map((camera) => (
-                <tr key={camera.camera_id} className="group hover:bg-white/5 transition-colors">
+                <tr key={camera.camera_id} className="group transition-colors">
                   <td className="py-4 pr-4">
-                    <div className="font-semibold text-white group-hover:text-indigo-300 transition-colors">
+                    <div className="font-bold text-[#0f172a] text-[14px]">
                       {camera.name}
                     </div>
-                    <div className="text-xs text-slate-400 font-mono truncate max-w-[200px]" title={camera.rtsp_url}>
+                    <div className="text-[12px] text-[#94a3b8] font-mono mt-0.5 truncate max-w-[200px]" title={camera.rtsp_url}>
                       {camera.rtsp_url}
                     </div>
                   </td>
@@ -148,10 +146,10 @@ export default function AgentToggle({ refreshTrigger }: { refreshTrigger: number
                           <button
                             disabled={isToggling}
                             onClick={() => handleToggle(camera.camera_id, agent, active)}
-                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-all duration-300 outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-slate-900 ${
+                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-all duration-300 outline-none ${
                               active
-                                ? 'bg-gradient-to-r from-indigo-500 to-purple-600 shadow-lg shadow-indigo-500/20'
-                                : 'bg-slate-700'
+                                ? 'bg-[#3b2fc9]'
+                                : 'bg-[#e2e8f0]'
                             } ${isToggling ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                           >
                             <span

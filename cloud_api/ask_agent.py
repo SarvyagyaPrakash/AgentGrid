@@ -2,6 +2,8 @@ import datetime
 import json
 import urllib.request
 import logging
+import os
+import re
 from psycopg2.extras import RealDictCursor
 from db import get_connection, put_connection
 
@@ -84,52 +86,88 @@ def filter_events(question: str):
 
 def ask_ollama(question: str, events: list) -> str:
     """Step 2: Send filtered rows to local Ollama instance and ask it to summarize/answer."""
-    if not events:
-        return "no matching events found"
-        
     # Serialize events to compact JSON, retaining full metadata (and track_id)
-    events_json = json.dumps(events, separators=(',', ':'))
+    events_json = json.dumps(events, separators=(',', ':')) if events else "[]"
     
     prompt = (
         "You are 'AgentGrid Ask Your Cameras' reasoning assistant.\n"
         "Analyze the following event logs from Postgres and answer the user's question.\n"
         "CRITICAL RULES:\n"
-        "1. You must answer the question ONLY using the provided events.\n"
-        "2. Do not assume or invent events. Do not mention events not listed in the JSON.\n"
-        "3. If the list is empty or does not contain events answering the question, say exactly 'no matching events found'.\n"
-        "4. Pay close attention to 'metadata.track_id' if present, to see if the same person or entity triggered different events.\n\n"
+        "1. If the user is greeting you (e.g. 'hi', 'hello', 'hey'), respond warmly, introduce yourself as AgentGrid assistant, and explain how you can help.\n"
+        "2. Answer the question using the provided events where possible. Do not invent events.\n"
+        "3. If the user asks general questions about yourself or the system, explain that you are AgentGrid's edge video analytics assistant.\n"
+        "4. If no events are relevant and it is not a general/greeting query, explain that no matching events were found.\n\n"
         f"Event Logs (JSON):\n{events_json}\n\n"
         f"Question: {question}\n"
         "Answer:"
     )
     
-    url = "http://localhost:11434/api/generate"
+    base_url = os.environ.get("OLLAMA_URL", "http://localhost:11434")
+    
+    # We want to try the primary URL first, and if localhost fails, try host.docker.internal
+    urls_to_try = [base_url]
+    if "localhost" in base_url:
+        urls_to_try.append(base_url.replace("localhost", "host.docker.internal"))
+    elif "127.0.0.1" in base_url:
+        urls_to_try.append(base_url.replace("127.0.0.1", "host.docker.internal"))
+        
+    last_error = None
+    res_text = ""
+    
     data = {
         "model": "deepseek-r1:1.5b",
         "prompt": prompt,
         "stream": False
     }
     
-    try:
-        req = urllib.request.Request(
-            url,
-            data=json.dumps(data).encode("utf-8"),
-            headers={"Content-Type": "application/json"},
-            method="POST"
-        )
-        with urllib.request.urlopen(req, timeout=60) as response:
-            res_data = json.loads(response.read().decode("utf-8"))
-            return res_data.get("response", "").strip()
-    except Exception as e:
-        logging.error(f"Failed to communicate with local Ollama: {e}")
-        return f"Error: Local Ollama model failed to respond. (Is Ollama running locally with deepseek-r1:1.5b? Details: {e})"
+    for url in urls_to_try:
+        api_url = f"{url.rstrip('/')}/api/generate"
+        try:
+            req = urllib.request.Request(
+                api_url,
+                data=json.dumps(data).encode("utf-8"),
+                headers={"Content-Type": "application/json"},
+                method="POST"
+            )
+            with urllib.request.urlopen(req, timeout=30) as response:
+                res_data = json.loads(response.read().decode("utf-8"))
+                res_text = res_data.get("response", "").strip()
+                break
+        except Exception as e:
+            last_error = e
+            logging.warning(f"Ollama connection failed at {api_url}: {e}")
+            continue
+            
+    if not res_text and last_error:
+        logging.error(f"Failed to communicate with local Ollama after trying all URLs: {last_error}")
+        return f"Error: Local Ollama model failed to respond. (Is Ollama running locally with deepseek-r1:1.5b? Details: {last_error})"
+
+    # Strip thinking block for deepseek-r1
+    clean_res = re.sub(r'<think>.*?</think>', '', res_text, flags=re.DOTALL).strip()
+    return clean_res if clean_res else "no matching events found"
 
 def ask_agent_query(question: str):
     """Executes the complete 2-step pipeline."""
     events = filter_events(question)
+    
+    # Fallback to recent events if no specific filter matches
+    if not events:
+        conn = get_connection()
+        try:
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                cur.execute("SELECT id, camera_id, agent, event_type, confidence, metadata, created_at FROM event_log ORDER BY created_at DESC LIMIT 20")
+                events = cur.fetchall()
+                for r in events:
+                    if r.get("created_at"):
+                        r["created_at"] = r["created_at"].isoformat()
+        except Exception as e:
+            logging.error(f"Error fetching fallback events: {e}")
+        finally:
+            put_connection(conn)
+            
     answer = ask_ollama(question, events)
     return {
         "answer": answer,
-        "matched_events": len(events),
+        "matched_events": len(events) if events else 0,
         "source": "event_log"
     }
