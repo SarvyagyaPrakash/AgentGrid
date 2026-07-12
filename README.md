@@ -43,12 +43,12 @@ Two independent AI agents watch the same video simultaneously, each focused on a
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────────┐
-│                              LOCAL EDGE                                       │
+│                              LOCAL EDGE                                      │
 │                                                                              │
-│  Camera or MP4 ──► MediaMTX ──► FrameBus (async broadcaster)                │
-│  (RTSP stream)                  ┌──────────┴──────────┐                     │
+│  Camera or MP4 ──► MediaMTX ──► FrameBus (async broadcaster)                 │
+│  (RTSP stream)                  ┌──────────┴──────────┐                      │
 │                                 ▼                      ▼                     │
-│                     Intrusion Agent           Productivity Agent              │
+│                     Intrusion Agent           Productivity Agent             │
 │                     (YOLOv8s)                 (YOLOv8s-pose)                 │
 │                                 │                      │                     │
 │                                 └──────────┬───────────┘                     │
@@ -64,11 +64,11 @@ Two independent AI agents watch the same video simultaneously, each focused on a
 ┌──────────────────────────────────────────────────────────────────────────────┐
 │                                CLOUD                                         │
 │                                                                              │
-│  FastAPI ──── Supabase (event_log, agent_configs, cameras)                  │
+│  FastAPI ──── Supabase (event_log, agent_configs, cameras)                   │
 │     │                                                                        │
-│     ├── Redis pub/sub ──── WebSocket ──── Dashboard (live feed)             │
+│     ├── Redis pub/sub ──── WebSocket ──── Dashboard (live feed)              │
 │     │                                                                        │
-│     └── Ask Agent: Ollama LLM (deepseek-r1:1.5b)                            │
+│     └── Ask Agent: Ollama LLM (deepseek-r1:1.5b)                             │
 │         Filters database by keyword/date, then answers from real events only │
 └──────────────────────────────────────────────────────────────────────────────┘
 ```
