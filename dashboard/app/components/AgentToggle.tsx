@@ -21,9 +21,11 @@ export default function AgentToggle({ refreshTrigger }: { refreshTrigger: number
   const [configs, setConfigs] = useState<AgentConfig[]>([]);
   const [loading, setLoading] = useState(true);
   const [toggling, setToggling] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
     try {
+      setError(null);
       const [cRes, aRes] = await Promise.all([
         fetch(`${API_URL}/api/cameras`),
         fetch(`${API_URL}/api/agents`)
@@ -33,9 +35,12 @@ export default function AgentToggle({ refreshTrigger }: { refreshTrigger: number
         const aData = await aRes.json();
         setCameras(cData);
         setConfigs(aData);
+      } else {
+        setError('Failed to fetch camera configurations from server.');
       }
     } catch (err) {
       console.error('Failed to fetch data for AgentToggle:', err);
+      setError('Could not connect to API server.');
     } finally {
       setLoading(false);
     }
@@ -50,6 +55,7 @@ export default function AgentToggle({ refreshTrigger }: { refreshTrigger: number
   const handleToggle = async (cameraId: string, agentName: string, currentVal: boolean) => {
     const toggleKey = `${cameraId}-${agentName}`;
     setToggling(toggleKey);
+    setError(null);
     try {
       const response = await fetch(`${API_URL}/api/agents/${cameraId}/${agentName}/toggle`, {
         method: 'POST',
@@ -69,9 +75,13 @@ export default function AgentToggle({ refreshTrigger }: { refreshTrigger: number
             return [...prev, { camera_id: cameraId, agent_name: agentName, enabled: !currentVal }];
           }
         });
+      } else {
+        const errData = await response.json().catch(() => ({}));
+        setError(errData.detail || 'Failed to update agent toggle state.');
       }
     } catch (err) {
       console.error('Failed to toggle agent:', err);
+      setError('Connection error: Failed to toggle agent.');
     } finally {
       setToggling(null);
     }
@@ -84,8 +94,12 @@ export default function AgentToggle({ refreshTrigger }: { refreshTrigger: number
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center p-8 bg-white rounded-3xl border border-[#e2e8f0] shadow-sm min-h-[200px]">
+      <div className="flex flex-col items-center justify-center p-8 bg-white rounded-3xl border border-[#e2e8f0] shadow-sm min-h-[200px] gap-3">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#4f46e5]"></div>
+        <p className="text-[12px] text-[#64748b] font-medium text-center">
+          Loading camera configuration...<br/>
+          <span className="text-[10px] opacity-75">(Render free instances may take 30-60s to wake up)</span>
+        </p>
       </div>
     );
   }
@@ -110,6 +124,12 @@ export default function AgentToggle({ refreshTrigger }: { refreshTrigger: number
           </svg>
         </button>
       </div>
+
+      {error && (
+        <div className="mb-4 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-[12.5px] font-semibold">
+          {error}
+        </div>
+      )}
 
       {cameras.length === 0 ? (
         <div className="text-center py-10 bg-[#f8f9fc] rounded-2xl border border-[#e2e8f0]">

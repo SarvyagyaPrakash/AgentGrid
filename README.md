@@ -1,271 +1,97 @@
-# AgentGrid
+# AgentGrid — Multi-Agent Edge Video Intelligence Platform
 
-<p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://img.shields.io/badge/AgentGrid-Multi--Agent%20Video%20Intelligence-7c3aed?style=for-the-badge&logo=python&logoColor=white">
-    <img src="https://img.shields.io/badge/AgentGrid-Multi--Agent%20Video%20Intelligence-7c3aed?style=for-the-badge&logo=python&logoColor=white" alt="AgentGrid">
-  </picture>
-</p>
-
-<p align="center">
-  <b>Edge-native video intelligence.</b> Two AI agents watch the same feed. Raw video stays local — only structured JSON meets the cloud.
-</p>
-
-<p align="center">
-  <img src="https://img.shields.io/badge/YOLOv8s-Detection-2563eb?style=flat-square&logo=openai&logoColor=white" alt="YOLOv8s">
-  <img src="https://img.shields.io/badge/YOLOv8s--pose-Pose%20Estimation-16a34a?style=flat-square&logo=openai&logoColor=white" alt="YOLOv8s-pose">
-  <img src="https://img.shields.io/badge/MediaMTX-RTSP-dc2626?style=flat-square" alt="MediaMTX">
-  <img src="https://img.shields.io/badge/FastAPI-Cloud%20API-059669?style=flat-square&logo=fastapi&logoColor=white" alt="FastAPI">
-  <img src="https://img.shields.io/badge/Next.js-Dashboard-000000?style=flat-square&logo=next.js&logoColor=white" alt="Next.js">
-  <img src="https://img.shields.io/badge/PostgreSQL-Supabase-3b82f6?style=flat-square&logo=supabase&logoColor=white" alt="Supabase">
-  <img src="https://img.shields.io/badge/Redis-Upstash-dc2626?style=flat-square&logo=redis&logoColor=white" alt="Redis">
-  <img src="https://img.shields.io/badge/Ollama-LLM-7c3aed?style=flat-square&logo=ollama&logoColor=white" alt="Ollama">
-</p>
+AgentGrid is an edge-native, privacy-preserving video intelligence platform that mirrors enterprise split-AI architectures. Instead of streaming continuous high-bandwidth video to the cloud, AgentGrid processes raw video feeds locally at the edge (on-site) using lightweight deep learning models, forwarding only structured JSON metadata events to a central cloud dashboard.
 
 ---
 
-## Why AgentGrid
+## Part 2 — System Architecture
 
-Most video-AI demos stream the entire feed to the cloud — expensive, slow, and privacy-hostile.
+```mermaid
+flowchart TB
+    subgraph LOCAL["LOCAL MACHINE (the 'edge' — your laptop)"]
+        SRC[Video source: MP4 file OR real RTSP URL] -->|looped via ffmpeg into| RTSP[mediamtx RTSP Server :8554]
+        RTSP -->|OpenCV VideoCapture| INGEST[ingest.py]
+        INGEST --> BUS[FrameBus - asyncio broadcaster]
+        BUS --> AGENT1[Agent 1: IntrusionAgent]
+        BUS --> AGENT2[Agent 2: ProductivityAgent]
+        AGENT1 -->|siren .wav + red banner| LOCALUI[Local Viewer :5000 - full video + boxes]
+        AGENT2 --> LOCALUI
+        AGENT1 -->|JSON event, HTTPS POST| PUB[publisher.py]
+        AGENT2 -->|JSON event, HTTPS POST| PUB
+    end
 
-AgentGrid flips the model. Everything happens on-device using local YOLOv8 models. The cloud receives only lightweight JSON event payloads (~0.4 Kbps per camera), not raw video (~2000 Kbps). This is how real production systems work.
+    subgraph CLOUD["CLOUD (all free tiers)"]
+        PUB --> API[FastAPI Orchestrator - Render.com]
+        API --> DB[(Supabase Postgres - event_log, agent_configs)]
+        API --> REDIS[(Upstash Redis - pub/sub for live feed)]
+        REDIS -->|WebSocket /ws/live| DASH[Next.js Dashboard - Vercel, PUBLIC URL]
+        DB --> DASH
+        DASH --> ASKAPI["/api/ask endpoint - reasoning layer"]
+        ASKAPI --> OLLAMA[Ollama + free local LLM - runs on your laptop, called by cloud API over a tunnel OR run locally only during demo]
+        OLLAMA --> DB
+    end
 
-Two independent AI agents watch the same video simultaneously, each focused on a single job:
-
-| Agent | Model | Purpose |
-|-------|-------|---------|
-| **Intrusion Detection** | `yolov8s.pt` | Flags people entering a configurable polygon zone during active hours. Plays a siren, draws a red alarm banner, emits a structured event. |
-| **Productivity Tracker** | `yolov8s-pose.pt` | Tracks skeletal keypoints over a 30-second rolling window and classifies each person as **active**, **idle**, or **away** based on motion displacement. |
-
----
-
-## How It Connects
-
-```
-┌──────────────────────────────────────────────────────────────────────────────┐
-│                              LOCAL EDGE                                      │
-│                                                                              │
-│  Camera or MP4 ──► MediaMTX ──► FrameBus (async broadcaster)                 │
-│  (RTSP stream)                  ┌──────────┴──────────┐                      │
-│                                 ▼                      ▼                     │
-│                     Intrusion Agent           Productivity Agent             │
-│                     (YOLOv8s)                 (YOLOv8s-pose)                 │
-│                                 │                      │                     │
-│                                 └──────────┬───────────┘                     │
-│                                            ▼                                 │
-│                                  OpenCV Window (overlays, alarms)            │
-│                                            │                                 │
-│                                            ▼                                 │
-│                                      Publisher: HTTPS POST                   │
-│                                     (JSON events only, no video)             │
-└────────────────────────────────────┬─────────────────────────────────────────┘
-                                     │
-                                     ▼
-┌──────────────────────────────────────────────────────────────────────────────┐
-│                                CLOUD                                         │
-│                                                                              │
-│  FastAPI ──── Supabase (event_log, agent_configs, cameras)                   │
-│     │                                                                        │
-│     ├── Redis pub/sub ──── WebSocket ──── Dashboard (live feed)              │
-│     │                                                                        │
-│     └── Ask Agent: Ollama LLM (deepseek-r1:1.5b)                             │
-│         Filters database by keyword/date, then answers from real events only │
-└──────────────────────────────────────────────────────────────────────────────┘
+    VISITOR[Recruiter / interviewer, any browser] --> DASH
 ```
 
 ---
 
-## Project Anatomy
+## Part 3 — Technical Stack
 
-### `camera_sim/` — Camera Simulation
+| Layer | Exact Tool | License/Cost | Purpose |
+|---|---|---|---|
+| Language | Python 3.11 | Free, open-source | All backend and AI code |
+| Object Detection | Ultralytics YOLOv8s (`yolov8s.pt`) | Free, AGPL-3.0 (via `ultralytics` pip package) | Person/object detection for Intrusion Agent |
+| Pose Estimation | Ultralytics YOLOv8s-pose (`yolov8s-pose.pt`) | Free, AGPL-3.0 | Skeleton keypoint extraction for Productivity Agent |
+| Camera simulation | mediamtx (latest release binary) | Free, open-source (MIT) | Turns a video file into a real RTSP stream |
+| Stream looping | ffmpeg | Free, open-source (LGPL/GPL) | Feeds video file into mediamtx continuously |
+| Frame processing | opencv-python | Free, open-source | Reading frames, drawing boxes/zones, computing zone overlap |
+| Backend/API framework | FastAPI + Uvicorn | Free, open-source (MIT) | Orchestrator API, WebSocket server |
+| Local viewer | Flask OR FastAPI (same framework, separate small app) | Free, open-source | Serves the full local video feed with overlays on `localhost:5000` |
+| Event bus | Redis, hosted via Upstash free tier | Free tier: 10,000 commands/day, 256MB | Real-time pub/sub from cloud API to public dashboard |
+| Database | PostgreSQL, hosted via Supabase free tier | Free tier: 500MB storage, unlimited API requests | Stores `event_log` and `agent_configs` tables |
+| Reasoning LLM | Ollama running a small free open model, e.g. `llama3.2:1b` or `phi3:mini` | Free, open-source, runs entirely on local hardware, no API key | Powers "Ask Your Cameras" natural-language answers |
+| Backend hosting | Render.com (free Web Service, Docker)* | Free CPU tier | Hosts the FastAPI orchestrator publicly |
+| Frontend hosting | Vercel | Free hobby tier | Hosts the Next.js public dashboard |
+| Alarm sound | Any short `.wav`/`.mp3` siren/beep from Pixabay Sound Effects or Freesound.org | Free, royalty-free | Local audible alert on intrusion |
+| Video sources | Pexels, Pixabay (stock footage); public government traffic camera feeds; self-recorded footage | Free, royalty-free/legal | Test footage for both agents |
+| Containerization | Docker + Docker Compose | Free (Docker Desktop, personal use) | Local dev parity with cloud deployment |
+| Version control | Git + GitHub (public repo) | Free | Code hosting, portfolio visibility |
 
-Loops MP4 files as live RTSP streams using MediaMTX + ffmpeg. Two pre-configured feeds:
-
-| Feed | URL | Content |
-|------|-----|---------|
-| CCTV1 | `rtsp://localhost:8554/cctv1` | Counter / entrance view |
-| OFFICE | `rtsp://localhost:8554/office` | Desk view |
-
-No real cameras needed — the entire pipeline works against simulated streams. Point `ingest.py` at a real RTSP camera URL and it works identically, zero code changes.
-
-### `local/` — Edge Processing
-
-| File | Role |
-|------|------|
-| `ingest.py` | Entry point — selects video source and launches agents |
-| `frame_bus.py` | Async pub/sub broadcaster — decodes stream once, serves all agents |
-| `publisher.py` | HTTP client — ships JSON events to the cloud API |
-| `agents/base_agent.py` | Abstract base — defines `emit_event()` contract |
-| `agents/intrusion_agent.py` | Polygon zone + active hours + siren alarm |
-| `agents/productivity_agent.py` | Pose keypoint displacement over rolling window |
-| `sounds/siren.wav` | Alarm audio played on intrusion trigger |
-
-**FrameBus** is the linchpin. It decodes the RTSP stream once, then broadcasts every frame to all subscribed agents asynchronously. This means you can add more agents without touching the decoding pipeline — each agent gets every frame independently.
-
-Both agents share a single YOLOv8s-pose inference per frame for person tracking, so `track_id` values are consistent across agents.
-
-### `cloud_api/` — Backend API
-
-FastAPI service with 9 REST endpoints + WebSocket pub/sub:
-
-| Method | Route | Purpose |
-|--------|-------|---------|
-| `POST` | `/api/events` | Log a detection or productivity event |
-| `GET` | `/api/events` | Query events (filterable by camera, agent, date, keyword) |
-| `GET` | `/api/events/recent` | Latest events for live dashboard |
-| `GET` | `/api/agents` | List all agent configurations |
-| `POST` | `/api/agents/{camera_id}/{agent_name}/toggle` | Enable / disable an agent |
-| `POST` | `/api/cameras` | Register a new camera |
-| `GET` | `/api/cameras` | List registered cameras |
-| `POST` | `/api/ask` | Natural-language query against the event database |
-| `WS` | `/ws/events` | WebSocket — live event stream via Redis pub/sub |
-
-**Event flow:** Publisher -> FastAPI -> Supabase (persist) + Redis (broadcast) -> WebSocket -> Dashboard.
-
-**Ask Agent** — a grounded 2-step reasoning pipeline:
-1. Parse the natural-language question, extract keywords and date ranges, query the database
-2. Pass the real matching events to a local Ollama `deepseek-r1:1.5b` model for summarization
-
-The LLM never invents data — it only sees what the database actually returned.
-
-### `dashboard/` — Web Dashboard (Next.js)
-
-A public-facing control panel deployable on Vercel:
-
-| Component | What it does |
-|-----------|-------------|
-| **Agent Toggle** | Table of cameras with on/off switches per agent |
-| **Live Event Feed** | Real-time event stream over WebSocket |
-| **Add Camera Form** | Register new RTSP camera sources |
-| **Ask Cameras Box** | Typed natural-language queries against the event log |
-
-Built with React 18, Tailwind CSS 3, and Geist fonts.
-
-### Utility Tools
-
-| Tool | Purpose |
-|------|---------|
-| `extract_frame.py` | Pull a single frame from any video for zone calibration reference |
-| `pick_zone_points.py` | Click-to-define polygon coordinates for intrusion zones |
+*\*Note: Render.com was substituted for Hugging Face Spaces due to a Hugging Face platform policy change requiring payment for the Docker SDK.*
 
 ---
 
-## Quick Start
+## Edge Architecture & Unified Tracking
 
-```bash
-# Prerequisites
-# Python 3.11, ffmpeg
-
-# 1. Install local dependencies
-pip install -r local/requirements.txt
-
-# 2. Start camera simulation
-bash camera_sim/start_stream.sh
-# Feeds: rtsp://localhost:8554/cctv1, rtsp://localhost:8554/office
-
-# 3. Run the agents
-python local/ingest.py
-# Press 'q' in the OpenCV window to quit
-```
-
-### Cloud API (Optional)
-
-```bash
-pip install -r cloud_api/requirements.txt
-# Set DATABASE_URL and REDIS_URL in .env
-uvicorn cloud_api.main:app --reload --port 8333
-```
-
-### Dashboard (Optional)
-
-```bash
-cd dashboard
-npm install
-npm run dev
-```
+AgentGrid is built on a unified local edge tracking pipeline:
+1. **VideoCaptureThread**: Decodes the RTSP stream in a dedicated async worker thread to prevent OpenCV I/O buffering from blocking processing loops.
+2. **FrameBus**: An asyncio-based message broker that distributes decoded video frames concurrently to multiple independent AI agents without redrawing or duplicating frames.
+3. **Multi-Agent Execution**: 
+   - **IntrusionAgent**: Tracks objects against a polygon zone check and active hour window.
+   - **ProductivityAgent**: Extracts skeletal coordinates using `yolov8s-pose.pt` and tracks motion displacement over a rolling 30-second window.
 
 ---
 
-## Tech Stack
+## Part 6.2/6.3 Scope Limitation
 
-| Layer | Technology |
-|-------|-----------|
-| Object Detection | Ultralytics **YOLOv8s** |
-| Pose Estimation | Ultralytics **YOLOv8s-pose** |
-| RTSP Server | **MediaMTX** |
-| Stream Looping | **ffmpeg** |
-| Computer Vision | **OpenCV** |
-| Concurrency | Python **asyncio** |
-| Audio Alarm | **simpleaudio** |
-| Cloud API | **FastAPI** + **Uvicorn** |
-| Database | **PostgreSQL** (Supabase) |
-| Event Bus | **Redis** (Upstash) |
-| Reasoning | **Ollama** — `deepseek-r1:1.5b` |
-| Dashboard | **Next.js 14** + **React 18** + **Tailwind CSS 3** |
-| Deployment | **Docker** + **Docker Compose** |
+> [!WARNING]
+> This agent measures presence and motion within a zone over time. It does NOT measure work quality, output, or effort, and must never be described as "measuring how hard someone is working."
 
 ---
 
-## Project Map
+## Part 8 — Local vs. Cloud Video Split
 
-```
-AgentGrid/
-├── docker-compose.yml           # Orchestrates cloud_api + dashboard
-├── .env.example                 # Required environment variables
-│
-├── camera_sim/                  # Camera simulation layer
-│   ├── start_stream.sh          # Launches MediaMTX + 2 ffmpeg loops
-│   └── sample_videos/
-│       ├── CCTV1.mp4
-│       └── OFFICE.mp4
-│
-├── local/                       # Edge processing layer
-│   ├── ingest.py                # Main entry point
-│   ├── frame_bus.py             # Async frame broadcaster
-│   ├── publisher.py             # Cloud API client
-│   ├── agents/
-│   │   ├── base_agent.py
-│   │   ├── intrusion_agent.py
-│   │   └── productivity_agent.py
-│   └── sounds/
-│       └── siren.wav
-│
-├── cloud_api/                   # Cloud backend
-│   ├── main.py                  # FastAPI app (9 endpoints + WebSocket)
-│   ├── models.py                # Pydantic schemas
-│   ├── db.py                    # PostgreSQL CRUD
-│   ├── redis_bus.py             # Redis pub/sub
-│   ├── ask_agent.py             # LLM reasoning pipeline
-│   └── Dockerfile
-│
-├── dashboard/                   # Web dashboard
-│   ├── app/
-│   │   ├── page.tsx             # Main dashboard grid
-│   │   └── components/
-│   │       ├── AgentToggle.tsx
-│   │       ├── LiveEventFeed.tsx
-│   │       ├── AddCameraForm.tsx
-│   │       └── AskCamerasBox.tsx
-│   └── Dockerfile
-│
-├── extract_frame.py             # Frame extraction tool
-└── pick_zone_points.py          # Zone polygon tool
-```
+| Where | URL (example) | What's shown | Video included? |
+|---|---|---|---|
+| Local viewer | `http://localhost:5000` | Full live video with bounding boxes, zone overlays, pose skeletons, alarm banner | **Yes — full video** |
+| Public cloud dashboard | `https://agentgrid.vercel.app` | Camera list, agent toggle grid, live text event feed, "Ask Your Cameras" box, 2-3 short pre-recorded demo clips/GIFs labeled as such, bandwidth-comparison widget | **No live video — text/events + pre-recorded clips only** |
+
+*This split exists because continuously streaming live video to a public server 24/7 requires paid bandwidth/compute that free tiers do not provide — this is the same real-world cost constraint that motivates commercial split-AI architecture.*
 
 ---
 
-## Design Decisions
+## Part 10 — Legal & Ethical Video Sourcing Policy
 
-- **Video stays local.** Only structured JSON events (avg. ~0.4 Kbps) leave the edge. No raw video is ever transmitted to any external service.
-- **Decode once, consume everywhere.** FrameBus decodes the RTSP stream once and broadcasts frames to all agents concurrently, avoiding redundant decode work.
-- **Consistent track IDs.** A single YOLOv8s-pose inference per frame provides unified person tracking across all agents.
-- **Grounded LLM reasoning.** The Ask Agent never passes questions directly to the LLM. It first filters the database by keyword/date, then passes only real events to Ollama for summarization. No hallucination, no bluff.
-- **Video source agnostic.** Swap a simulated RTSP URL for a real camera URL — the pipeline works without changes.
-
----
-
-## License
-
-MIT — see [LICENSE](./LICENSE).
-
-Third-party components (Ultralytics YOLOv8, MediaMTX, ffmpeg, OpenCV, Ollama, etc.) are governed by their respective licenses.
+> [!IMPORTANT]
+> Only use video from: (1) royalty-free stock footage sites (Pexels, Pixabay), (2) footage you personally record, or (3) publicly and intentionally published government/municipal traffic camera feeds. Do NOT use footage or streams sourced from websites aggregating unsecured/unintentionally-exposed private CCTV cameras, regardless of ease of access — this applies for both ethical and legal reasons and is especially important given this project is meant to demonstrate privacy-conscious engineering judgment.

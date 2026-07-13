@@ -24,24 +24,38 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8333';
 export default function LiveEventFeed() {
   const [events, setEvents] = useState<EventData[]>([]);
   const [status, setStatus] = useState<'connecting' | 'connected' | 'disconnected'>('connecting');
+  const [error, setError] = useState<string | null>(null);
 
   const getWsUrl = (httpUrl: string) => {
-    const url = new URL(httpUrl);
-    url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
-    url.pathname = '/ws/live';
-    return url.toString();
+    let cleanedUrl = httpUrl.trim();
+    if (!/^https?:\/\//i.test(cleanedUrl)) {
+      cleanedUrl = 'http://' + cleanedUrl;
+    }
+    try {
+      const url = new URL(cleanedUrl);
+      url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
+      url.pathname = '/ws/live';
+      return url.toString();
+    } catch (e) {
+      console.error('Failed to construct WebSocket URL:', e);
+      return 'ws://localhost:8333/ws/live';
+    }
   };
 
   useEffect(() => {
     const fetchHistory = async () => {
       try {
+        setError(null);
         const response = await fetch(`${API_URL}/api/events?limit=50`);
         if (response.ok) {
           const data = await response.json();
           setEvents(data);
+        } else {
+          setError('Failed to load recent event history.');
         }
       } catch (err) {
         console.error('Failed to fetch event history:', err);
+        setError('Could not connect to server to fetch events.');
       }
     };
 
@@ -132,6 +146,11 @@ export default function LiveEventFeed() {
           </h2>
         </div>
         <div className="flex items-center space-x-1.5">
+          {status !== 'connected' && (
+            <span className="text-[10px] text-[#64748b] font-medium hidden md:inline">
+              (Waking Render API...)
+            </span>
+          )}
           <span className={`h-2 w-2 rounded-full ${
             status === 'connected' ? 'bg-[#22c55e]' :
             status === 'connecting' ? 'bg-amber-400' : 'bg-rose-500'
@@ -141,6 +160,12 @@ export default function LiveEventFeed() {
           </span>
         </div>
       </div>
+
+      {error && (
+        <div className="mb-4 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-[12px] font-semibold">
+          {error}
+        </div>
+      )}
 
       <div className="flex-1 overflow-y-auto pr-1 space-y-4 min-h-0">
         {events.length === 0 ? (

@@ -5,6 +5,7 @@ import AgentToggle from './components/AgentToggle';
 import LiveEventFeed from './components/LiveEventFeed';
 import AddCameraForm from './components/AddCameraForm';
 import AskCamerasBox from './components/AskCamerasBox';
+import DemoClips from './components/DemoClips';
 
 export default function Home() {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
@@ -17,19 +18,18 @@ export default function Home() {
     <main className="min-h-screen bg-[#f8f9fc] text-[#1e293b] font-sans relative pb-16">
       <div className="max-w-7xl mx-auto px-6 py-10 space-y-8">
         
-        {/* Header */}
-        <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between pb-4 gap-4">
-          <div>
-            <h1 className="text-[34px] font-extrabold tracking-tight text-[#0f172a] leading-tight">
-              AgentGrid Dashboard
-            </h1>
-            <p className="text-[#64748b] mt-1.5 text-[15px] font-medium max-w-3xl">
-              Multi-Agent Video Intelligence Control & Analytics Platform. Powered by edge processing, unified in the cloud.
-            </p>
+        {/* Brand Header Bar */}
+        <header className="bg-[#02091c] rounded-3xl border border-[#111827]/10 p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 shadow-sm">
+          <div className="flex items-center">
+            <img 
+              src="/logo.png" 
+              alt="AgentGrid Logo" 
+              className="h-16 md:h-20 w-auto object-contain rounded-lg" 
+            />
           </div>
-          <div className="flex items-center space-x-2 bg-[#eef2ff] border border-[#e0e7ff] px-4 py-2 rounded-full self-start sm:self-center">
-            <span className="h-2 w-2 rounded-full bg-[#4f46e5] animate-pulse" />
-            <span className="text-[11px] font-bold text-[#4f46e5] tracking-wider uppercase font-sans">
+          <div className="flex items-center space-x-2 bg-emerald-500/10 border border-emerald-500/20 px-4 py-2 rounded-full self-start sm:self-center mr-2">
+            <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="text-[11px] font-bold text-emerald-400 tracking-wider uppercase font-sans">
               CLOUD LAYER LIVE
             </span>
           </div>
@@ -87,6 +87,7 @@ export default function Home() {
                 </div>
               </div>
             </div>
+            <DemoClips />
           </div>
 
           {/* Right Column (AI Agent Controller, Live Event Feed, Onboard Edge Stream) */}
