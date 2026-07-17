@@ -5,7 +5,9 @@ AgentGrid_Final_Spec.md.pdf
 
 # Binaries and Configs
 mediamtx
+mediamtx.exe
 mediamtx.yml
+*.mp4
 
 # OS generated files
 .DS_Store
