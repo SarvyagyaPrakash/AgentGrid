@@ -1,7 +1,10 @@
 import cv2
 import numpy as np
 from datetime import datetime
-import simpleaudio as sa
+try:
+    import simpleaudio as sa
+except ImportError:
+    sa = None
 import asyncio
 from ultralytics import YOLO
 
@@ -32,8 +35,12 @@ class IntrusionAgent(BaseAgent):
         
         # Load the siren sound object
         try:
-            self.siren_wave = sa.WaveObject.from_wave_file("local/sounds/siren.wav")
-            print(f"[{self.agent_name}] Siren sound loaded.")
+            if sa is not None:
+                self.siren_wave = sa.WaveObject.from_wave_file("local/sounds/siren.wav")
+                print(f"[{self.agent_name}] Siren sound loaded.")
+            else:
+                self.siren_wave = None
+                print(f"[{self.agent_name}] Warning: simpleaudio not installed, audio disabled.")
         except Exception as e:
             print(f"[{self.agent_name}] Warning: Could not load siren.wav. Error: {e}")
             self.siren_wave = None

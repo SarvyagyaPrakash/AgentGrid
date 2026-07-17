@@ -8,15 +8,19 @@ set -e
 
 # Define directories
 PROJECT_ROOT=$(cd "$(dirname "$0")/.." && pwd)
-MEDIAMTX_BIN="$PROJECT_ROOT/mediamtx"
 SAMPLE_DIR="$PROJECT_ROOT/camera_sim/sample_videos"
+
+if [ -f "$PROJECT_ROOT/mediamtx.exe" ]; then
+    MEDIAMTX_BIN="$PROJECT_ROOT/mediamtx.exe"
+elif [ -f "$PROJECT_ROOT/mediamtx" ]; then
+    MEDIAMTX_BIN="$PROJECT_ROOT/mediamtx"
+else
+    echo "Error: mediamtx binary not found in project root"
+    exit 1
+fi
 
 # 1. Start mediamtx in the background
 echo "Starting mediamtx server..."
-if [ ! -f "$MEDIAMTX_BIN" ]; then
-    echo "Error: mediamtx binary not found at $MEDIAMTX_BIN"
-    exit 1
-fi
 
 # Run mediamtx in the background and redirect output to a log file
 "$MEDIAMTX_BIN" > "$PROJECT_ROOT/mediamtx.log" 2>&1 &

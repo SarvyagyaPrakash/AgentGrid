@@ -4,7 +4,10 @@ This agent measures presence and motion within a zone over time. It does NOT mea
 import cv2
 import numpy as np
 import asyncio
-import simpleaudio as sa
+try:
+    import simpleaudio as sa
+except ImportError:
+    sa = None
 from ultralytics import YOLO
 
 from .base_agent import BaseAgent
@@ -24,7 +27,10 @@ class ProductivityAgent(BaseAgent):
         self.model = YOLO("yolov8s-pose.pt")
         
         try:
-            self.siren_wave = sa.WaveObject.from_wave_file("local/sounds/siren.wav")
+            if sa is not None:
+                self.siren_wave = sa.WaveObject.from_wave_file("local/sounds/siren.wav")
+            else:
+                self.siren_wave = None
         except Exception as e:
             self.siren_wave = None
             

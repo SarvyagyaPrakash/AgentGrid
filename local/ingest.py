@@ -103,6 +103,7 @@ async def main():
 
     print("System running. Press 'q' to quit.")
 
+    show_gui = True
     while True:
         ret, frame = cap.read()
         if not ret:
@@ -116,18 +117,24 @@ async def main():
         await bus.broadcast(frame, results)
 
         # Display the annotated frame
-        cv2.imshow("AgentGrid Local Viewer", frame)
+        if show_gui:
+            try:
+                cv2.imshow("AgentGrid Local Viewer", frame)
+                if cv2.waitKey(1) & 0xFF == ord('q'):
+                    print("User pressed 'q', exiting...")
+                    break
+            except Exception:
+                print("OpenCV GUI window not supported in this environment. Running headless.")
+                show_gui = False
 
-        # Check for user input to exit
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            print("User pressed 'q', exiting...")
-            break
-            
         # Small sleep to yield to event loop
         await asyncio.sleep(0.001)
 
     cap.release()
-    cv2.destroyAllWindows()
+    try:
+        cv2.destroyAllWindows()
+    except Exception:
+        pass
 
 if __name__ == "__main__":
     asyncio.run(main())
