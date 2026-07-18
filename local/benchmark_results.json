@@ -1,0 +1,20 @@
+{
+  "test_date": "2026-07-18T05:09:47.681433Z",
+  "test_duration_seconds": 300,
+  "hardware": "MacBook Air M4, 16GB RAM",
+  "raw_video": {
+    "total_bytes": 1295128576,
+    "avg_kbps": 4226.275197133176,
+    "peak_kbps": 5231.835041745097
+  },
+  "event_only": {
+    "total_events": 23,
+    "total_bytes": 5179,
+    "avg_kbps": 0.016858723958333332
+  },
+  "extrapolated": {
+    "events_per_hour": 276.0,
+    "estimated_daily_event_kb": 1456.5937499999998
+  },
+  "savings_percent": 99.99960011692306
+}
