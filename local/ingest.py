@@ -1,3 +1,6 @@
+import os
+os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = "rtsp_transport;tcp"
+
 import cv2
 import sys
 import asyncio
@@ -12,7 +15,9 @@ class VideoCaptureThread:
     overflowing and corrupting frames (macroblock glitches) when YOLO inference is slow.
     """
     def __init__(self, src):
-        self.cap = cv2.VideoCapture(src)
+        self.cap = cv2.VideoCapture(src, cv2.CAP_FFMPEG)
+        backend = self.cap.getBackendName()
+        print(f"[Ingest] VideoCapture initialized. Active backend: {backend}")
         self.ret, self.frame = self.cap.read()
         self.running = True
         self.thread = threading.Thread(target=self.update, args=())

@@ -33,10 +33,11 @@ sleep 1
 # 2. Start streaming both videos
 echo "Starting streams to cctv1 and office..."
 
-ffmpeg -re -stream_loop -1 -i "$SAMPLE_DIR/CCTV1.mp4" -c:v libx264 -preset ultrafast -tune zerolatency -g 30 -f rtsp rtsp://localhost:8554/cctv1 > /dev/null 2>&1 &
+# Note: h264 decode warnings from OpenCV/ffplay at each loop restart are expected and harmless — caused by -stream_loop -1 restarting short demo clips. Not present with continuous real camera input.
+ffmpeg -re -stream_loop -1 -i "$SAMPLE_DIR/CCTV1.mp4" -c:v libx264 -preset ultrafast -tune zerolatency -g 30 -f rtsp -rtsp_transport tcp rtsp://localhost:8554/cctv1 > /dev/null 2>&1 &
 FFMPEG1_PID=$!
 
-ffmpeg -re -stream_loop -1 -i "$SAMPLE_DIR/OFFICE.mp4" -c:v libx264 -preset ultrafast -tune zerolatency -g 30 -f rtsp rtsp://localhost:8554/office > /dev/null 2>&1 &
+ffmpeg -re -stream_loop -1 -i "$SAMPLE_DIR/OFFICE.mp4" -c:v libx264 -preset ultrafast -tune zerolatency -g 30 -f rtsp -rtsp_transport tcp rtsp://localhost:8554/office > /dev/null 2>&1 &
 FFMPEG2_PID=$!
 
 echo "CCTV1 streaming at rtsp://localhost:8554/cctv1 (PID: $FFMPEG1_PID)"
