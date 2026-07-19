@@ -140,7 +140,68 @@ def ask_ollama(question: str, events: list) -> str:
             
     if not res_text and last_error:
         logging.error(f"Failed to communicate with local Ollama after trying all URLs: {last_error}")
-        return f"Error: Local Ollama model failed to respond. (Is Ollama running locally with deepseek-r1:1.5b? Details: {last_error})"
+        
+        if not events:
+            return "⚠️ **Local Ollama instance not detected.** No matching events were found in the database."
+
+        summary_lines = [
+            "⚠️ **Local Ollama instance not detected.** Here is a structured summary of matching events found in the database:",
+            ""
+        ]
+        
+        # Group by agent
+        by_agent = {}
+        for ev in events:
+            agent = ev.get("agent") or "unknown_agent"
+            by_agent.setdefault(agent, []).append(ev)
+            
+        for agent, ag_events in by_agent.items():
+            agent_display = agent.replace("_", " ").title()
+            summary_lines.append(f"### {agent_display}")
+            
+            # Count details
+            count = len(ag_events)
+            summary_lines.append(f"- Matched **{count}** event{'s' if count > 1 else ''} for this agent.")
+            
+            # Summarize the 5 most recent events for this agent
+            recent_events = ag_events[:5]
+            for ev in recent_events:
+                cam = ev.get("camera_id") or "unknown_cam"
+                evt_type = ev.get("event_type") or "event"
+                meta = ev.get("metadata") or {}
+                
+                # Parse metadata if it's stored as a JSON string
+                if isinstance(meta, str):
+                    try:
+                        meta = json.loads(meta)
+                    except Exception:
+                        pass
+                
+                meta_str = ""
+                if "intrusion" in agent.lower():
+                    label = meta.get("label") or "motion"
+                    conf = meta.get("confidence")
+                    conf_str = f" ({conf*100:.0f}% confidence)" if conf is not None else ""
+                    meta_str = f" - Detected **{label}**{conf_str}"
+                elif "productivity" in agent.lower():
+                    disp = meta.get("displacement")
+                    disp_str = f" (displacement: {disp:.1f}px)" if disp is not None else ""
+                    meta_str = f" - Status: **{evt_type}**{disp_str}"
+                
+                timestamp = ev.get("created_at") or ev.get("timestamp") or "N/A"
+                if isinstance(timestamp, str) and "T" in timestamp:
+                    parts = timestamp.split("T")
+                    time_part = parts[1].split(".")[0]
+                    date_part = parts[0]
+                    timestamp = f"{date_part} {time_part}"
+                
+                summary_lines.append(f"  - **{timestamp}** on `{cam}`{meta_str}")
+            
+            if count > 5:
+                summary_lines.append(f"  - *...and {count - 5} more events*")
+            summary_lines.append("")
+            
+        return "\n".join(summary_lines)
 
     # Strip thinking block for deepseek-r1
     clean_res = re.sub(r'<think>.*?</think>', '', res_text, flags=re.DOTALL).strip()
