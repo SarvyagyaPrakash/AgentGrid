@@ -9,9 +9,44 @@ import DemoClips from './components/DemoClips';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8333';
 
+interface BenchmarkMetric {
+  avg_inference_ms: number;
+  avg_fps: number;
+  model_file_size_mb: number;
+}
+
+interface BenchmarkResults {
+  test_date: string;
+  test_duration_seconds: number;
+  hardware: string;
+  raw_video: {
+    total_bytes: number;
+    avg_kbps: number;
+    peak_kbps: number;
+  };
+  event_only: {
+    total_events: number;
+    total_bytes: number;
+    avg_kbps: number;
+  };
+  extrapolated: {
+    events_per_hour: number;
+    estimated_daily_event_kb: number;
+  };
+  savings_percent: number;
+  model_speed: {
+    test_frame_count: number;
+    pytorch: BenchmarkMetric;
+    onnx: BenchmarkMetric;
+    coreml: BenchmarkMetric;
+    fastest_method: string;
+    note: string;
+  };
+}
+
 export default function Home() {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
-  const [benchmarks, setBenchmarks] = useState<any>(null);
+  const [benchmarks, setBenchmarks] = useState<BenchmarkResults | null>(null);
 
   const handleCameraAdded = () => {
     setRefreshTrigger((prev) => prev + 1);
