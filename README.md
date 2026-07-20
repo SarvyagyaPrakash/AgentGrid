@@ -220,7 +220,7 @@ The edge processing stack (ingest.py, mediamtx, ffmpeg) runs natively on the hos
 | Where | URL (example) | What's shown | Video included? |
 |---|---|---|---|
 | Local viewer | OpenCV window | Full live video with bounding boxes, zone overlays, pose skeletons, alarm banner | **Yes — full video** |
-| Public cloud dashboard | `https://agentgrid.vercel.app` | Camera list, agent toggle grid, live text event feed, "Ask Your Cameras" box, 2-3 short pre-recorded demo clips/GIFs labeled as such, bandwidth-comparison widget | **No live video — text/events + pre-recorded clips only** |
+| Public cloud dashboard | `agent-grid-two.vercel.app` | Camera list, agent toggle grid, live text event feed, "Ask Your Cameras" box, 2-3 short pre-recorded demo clips/GIFs labeled as such, bandwidth-comparison widget | **No live video — text/events + pre-recorded clips only** |
 
 *This split exists because continuously streaming live video to a public server 24/7 requires paid bandwidth/compute that free tiers do not provide — this is the same real-world cost constraint that motivates commercial split-AI architecture.*
 
