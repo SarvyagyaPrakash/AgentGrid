@@ -169,7 +169,48 @@ def get_recent_events(limit: int = 50):
     except Exception as e:
         logging.error(f"Failed to fetch recent events: {e}")
         raise e
-    finally:
         put_connection(conn)
 
 
+def save_benchmark_results(results: dict):
+    """Saves benchmark results to the benchmark_results table."""
+    conn = get_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                INSERT INTO benchmark_results (results)
+                VALUES (%s)
+                """,
+                (json.dumps(results),)
+            )
+            conn.commit()
+    except Exception as e:
+        conn.rollback()
+        logging.error(f"Failed to save benchmark results: {e}")
+        raise e
+    finally:
+        put_connection(conn)
+
+def get_latest_benchmark_results():
+    """Retrieves the latest benchmark results."""
+    conn = get_connection()
+    try:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute(
+                """
+                SELECT results, created_at
+                FROM benchmark_results
+                ORDER BY created_at DESC
+                LIMIT 1
+                """
+            )
+            result = cur.fetchone()
+            if result:
+                return dict(result)["results"]
+            return None
+    except Exception as e:
+        logging.error(f"Failed to fetch latest benchmark results: {e}")
+        raise e
+    finally:
+        put_connection(conn)

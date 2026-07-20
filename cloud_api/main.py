@@ -105,3 +105,22 @@ async def ask_cameras(request: AskRequest):
         return res
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error in reasoning layer: {str(e)}")
+
+@app.post("/api/benchmarks")
+async def post_benchmark(payload: dict = Body(...)):
+    try:
+        db.save_benchmark_results(payload)
+        return {"status": "success", "message": "Benchmark results saved successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+
+@app.get("/api/benchmarks")
+async def get_benchmark():
+    try:
+        results = db.get_latest_benchmark_results()
+        if results is None:
+            # Fallback to empty/default structure if none exists yet so it doesn't hard-crash the dashboard
+            return {}
+        return results
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")

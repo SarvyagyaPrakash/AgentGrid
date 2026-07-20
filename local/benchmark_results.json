@@ -16,5 +16,25 @@
     "events_per_hour": 276.0,
     "estimated_daily_event_kb": 1456.5937499999998
   },
-  "savings_percent": 99.99960011692306
+  "savings_percent": 99.99960011692306,
+  "model_speed": {
+    "test_frame_count": 300,
+    "pytorch": {
+      "avg_inference_ms": 43.598,
+      "avg_fps": 22.94,
+      "model_file_size_mb": 22.42
+    },
+    "onnx": {
+      "avg_inference_ms": 72.125,
+      "avg_fps": 13.86,
+      "model_file_size_mb": 44.65
+    },
+    "coreml": {
+      "avg_inference_ms": 19.802,
+      "avg_fps": 50.5,
+      "model_file_size_mb": 44.6
+    },
+    "fastest_method": "coreml",
+    "note": "ONNX CPU execution did not outperform native PyTorch on this hardware; CoreML is the more relevant comparison for Apple Silicon edge devices specifically, since it uses the Neural Engine rather than CPU-only execution."
+  }
 }

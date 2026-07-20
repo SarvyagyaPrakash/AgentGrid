@@ -2,3 +2,5 @@ ultralytics
 opencv-python
 simpleaudio
 httpx
+onnxruntime
+coremltools
