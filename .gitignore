@@ -5,7 +5,6 @@ AgentGrid_Final_Spec.md.pdf
 
 # Binaries and Configs
 mediamtx
-mediamtx.yml
 
 # OS generated files
 .DS_Store
@@ -60,10 +59,9 @@ LICENSE
 
 # Logs
 *.log
-Tutorial.md
 
-# Helper scripts and outputs
-extract_frame.py
-pick_zone_points.py
+# Helper outputs and temporary frames (keep local)
 test_frame.png
+temp_dynamic_frame.png
+different_image.png
 skills-lock.json
