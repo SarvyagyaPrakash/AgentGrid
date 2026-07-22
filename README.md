@@ -2,7 +2,7 @@
 
 <p align="left">
   <b>📖 README</b> &nbsp;&bull;&nbsp;
-  <a href="Tutorial.md"><b>🎓 Tutorial</b></a> <sub>(used by industry-level repos)</sub>
+  <a href="Tutorial.md"><b>🎓 Tutorial</b></a>
 </p>
 
 AgentGrid is an edge-native, privacy-preserving video intelligence platform that mirrors enterprise split-AI architectures. Instead of streaming continuous high-bandwidth video to the cloud, AgentGrid processes raw video feeds locally at the edge (on-site) using lightweight deep learning models, forwarding only structured JSON metadata events to a central cloud dashboard.
