@@ -1,5 +1,10 @@
 # 🚀 AgentGrid: Complete Operational Runbook & Feature Walkthrough
 
+<p align="left">
+  <a href="README.md"><b>📖 README</b></a> &nbsp;&bull;&nbsp;
+  <b>🎓 Tutorial</b> <sub>(used by industry-level repos)</sub>
+</p>
+
 Welcome to the **AgentGrid** master walkthrough. This guide provides comprehensive, step-by-step instructions for launching, testing, and verifying every single edge-native, cloud-integrated, and Vision-Language Model (VLM) feature on your machine.
 
 ---
@@ -60,10 +65,12 @@ Before feeding frames to the database or main pipeline, verify that the local **
   ```
 * **Launch Command (Static Image)**:
   ```bash
+  source env/bin/activate
   python local/vlm_test.py --image test_frame.png
   ```
 * **Launch Command (Live RTSP Feed)**:
   ```bash
+  source env/bin/activate
   python local/vlm_test.py --video rtsp://localhost:8554/cctv1
   ```
 * **Expected Output**:

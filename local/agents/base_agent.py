@@ -17,7 +17,7 @@ class BaseAgent(abc.ABC):
         """Process a single frame from the video stream."""
         pass
 
-    def emit_event(self, agent_name: str, event_type: str, confidence: float, metadata: dict):
+    def emit_event(self, agent_name: str, event_type: str, confidence: float, metadata: dict, frame=None):
         """Emit an event matching the schema in Part 5.1 of the spec."""
         if not self.enabled:
             return
@@ -30,4 +30,4 @@ class BaseAgent(abc.ABC):
             "timestamp": datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z'),
             "metadata": metadata
         }
-        publish_event(event_data)
+        publish_event(event_data, frame)

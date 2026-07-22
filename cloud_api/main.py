@@ -39,9 +39,25 @@ async def health():
 async def create_event(event: Event):
     try:
         event_dict = event.model_dump()
-        db.save_event(event_dict)
+        event_id = db.save_event(event_dict)
+        event_dict["id"] = event_id
         await publish_to_dashboard(event_dict)
-        return {"status": "success", "message": "Event logged successfully"}
+        return {"status": "success", "message": "Event logged successfully", "id": event_id}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+
+@app.put("/api/events/{event_id}/metadata")
+async def update_event_metadata(event_id: int, metadata: dict = Body(...)):
+    try:
+        db.update_event_metadata(event_id, metadata)
+        # Broadcast the update payload to the live dashboard
+        update_payload = {
+            "id": event_id,
+            "metadata": metadata,
+            "is_update": True
+        }
+        await publish_to_dashboard(update_payload)
+        return {"status": "success", "message": "Event metadata updated successfully"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 

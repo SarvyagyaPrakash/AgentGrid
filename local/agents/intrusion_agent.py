@@ -131,7 +131,8 @@ class IntrusionAgent(BaseAgent):
                     agent_name=self.agent_name,
                     event_type="intrusion",
                     confidence=round(highest_conf, 2),
-                    metadata=metadata
+                    metadata=metadata,
+                    frame=frame
                 )
                 
                 if self.siren_wave:
