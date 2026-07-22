@@ -7,7 +7,10 @@ class Event(BaseModel):
     event_type: str
     confidence: float
     timestamp: str
-    metadata: Dict[str, Any] = Field(default_factory=dict)
+    metadata: Dict[str, Any] = Field(
+        default_factory=dict, 
+        description="Metadata dictionary. May optionally include 'scene_caption'."
+    )
 
 class AgentConfig(BaseModel):
     camera_id: str

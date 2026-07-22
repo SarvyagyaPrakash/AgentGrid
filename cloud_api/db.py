@@ -31,8 +31,8 @@ def put_connection(conn):
     if _pool is not None:
         _pool.putconn(conn)
 
-def save_event(event: dict):
-    """Saves an event to the event_log table."""
+def save_event(event: dict) -> int:
+    """Saves an event to the event_log table and returns the generated ID."""
     conn = get_connection()
     try:
         with conn.cursor() as cur:
@@ -40,6 +40,7 @@ def save_event(event: dict):
                 """
                 INSERT INTO event_log (camera_id, agent, event_type, confidence, metadata)
                 VALUES (%s, %s, %s, %s, %s)
+                RETURNING id
                 """,
                 (
                     event.get("camera_id"),
@@ -49,10 +50,33 @@ def save_event(event: dict):
                     json.dumps(event.get("metadata", {}))
                 )
             )
+            event_id = cur.fetchone()[0]
             conn.commit()
+            return event_id
     except Exception as e:
         conn.rollback()
         logging.error(f"Failed to save event: {e}")
+        raise e
+    finally:
+        put_connection(conn)
+
+def update_event_metadata(event_id: int, metadata: dict):
+    """Updates the metadata field of an event in the event_log table."""
+    conn = get_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                UPDATE event_log
+                SET metadata = %s
+                WHERE id = %s
+                """,
+                (json.dumps(metadata), event_id)
+            )
+            conn.commit()
+    except Exception as e:
+        conn.rollback()
+        logging.error(f"Failed to update event metadata: {e}")
         raise e
     finally:
         put_connection(conn)

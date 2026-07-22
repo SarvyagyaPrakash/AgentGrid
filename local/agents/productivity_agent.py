@@ -147,7 +147,8 @@ class ProductivityAgent(BaseAgent):
                 agent_name=self.agent_name,
                 event_type=state,
                 confidence=1.0,
-                metadata=metadata
+                metadata=metadata,
+                frame=frame
             )
             
             # Reset window
