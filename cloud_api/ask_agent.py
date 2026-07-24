@@ -86,18 +86,39 @@ def filter_events(question: str):
 
 def ask_ollama(question: str, events: list) -> str:
     """Step 2: Send filtered rows to local Ollama instance and ask it to summarize/answer."""
-    # Serialize events to compact JSON, retaining full metadata (and track_id)
-    events_json = json.dumps(events, separators=(',', ':')) if events else "[]"
+    # Limit to top 10 most recent events to prevent LLM context overflow/confusion
+    relevant_events = events[:10] if events else []
     
+    # Construct a clean, structured representation of the events for the LLM
+    events_str = ""
+    if relevant_events:
+        for idx, e in enumerate(relevant_events, 1):
+            metadata = e.get("metadata") or {}
+            caption = metadata.get("scene_caption", "N/A")
+            events_str += (
+                f"Event {idx}:\n"
+                f"- Camera: {e.get('camera_id')}\n"
+                f"- Agent: {e.get('agent')}\n"
+                f"- Type: {e.get('event_type')}\n"
+                f"- Confidence: {e.get('confidence')}\n"
+                f"- Timestamp: {e.get('created_at') or e.get('timestamp')}\n"
+                f"- Scene Caption (what the VLM saw): {caption}\n"
+                f"- Extra Metadata: {json.dumps({k: v for k, v in metadata.items() if k != 'scene_caption'})}\n\n"
+            )
+    else:
+        events_str = "No events matching the criteria found."
+
     prompt = (
         "You are 'AgentGrid Ask Your Cameras' reasoning assistant.\n"
         "Analyze the following event logs from Postgres and answer the user's question.\n"
+        "NOTE: The events below are listed in descending order (newest/most recent first). Event 1 is the most recent event.\n\n"
         "CRITICAL RULES:\n"
         "1. If the user is greeting you (e.g. 'hi', 'hello', 'hey'), respond warmly, introduce yourself as AgentGrid assistant, and explain how you can help.\n"
-        "2. Answer the question using the provided events where possible. Do not invent events.\n"
+        "2. Answer the question using the provided events where possible. Note that each event contains a 'Scene Caption (what the VLM saw)' field describing the actual visual detail recorded by a Vision-Language Model. Draw heavily from these scene captions for your answer to provide a rich description of what happened. Do not invent events.\n"
         "3. If the user asks general questions about yourself or the system, explain that you are AgentGrid's edge video analytics assistant.\n"
-        "4. If no events are relevant and it is not a general/greeting query, explain that no matching events were found.\n\n"
-        f"Event Logs (JSON):\n{events_json}\n\n"
+        "4. If no events are relevant and it is not a general/greeting query, explain that no matching events were found.\n"
+        "5. Respond using a strict format detailing the Activity, Time, and Camera (e.g. Activity: [description], Time: [time], Camera: [camera_id]), and keep the response under 100 words by default.\n\n"
+        f"Event Logs:\n{events_str}\n"
         f"Question: {question}\n"
         "Answer:"
     )

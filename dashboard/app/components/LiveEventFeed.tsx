@@ -6,6 +6,7 @@ interface EventMetadata {
   box?: number[];
   zone?: string;
   track_id?: number | string;
+  scene_caption?: string;
   [key: string]: unknown;
 }
 
@@ -209,6 +210,13 @@ export default function LiveEventFeed() {
                     {(event.confidence * 100).toFixed(0)}% Match
                   </div>
                 </div>
+
+                {event.metadata?.scene_caption && (
+                  <div className="mt-3 pt-2.5 border-t border-dashed border-[#e2e8f0] text-[12px] text-[#334155] font-medium leading-relaxed italic">
+                    <span className="font-bold not-italic text-[#64748b] mr-1">Scene:</span>
+                    &ldquo;{event.metadata.scene_caption}&rdquo;
+                  </div>
+                )}
               </div>
             );
           })

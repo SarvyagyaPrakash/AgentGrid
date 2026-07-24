@@ -143,11 +143,18 @@ Here is how you can verify that the system is fully operational and performing c
   * If a person stays in place for more than 300 seconds, a **stability alarm** (visual banner + siren) fires to report a potential safety/productivity issue.
 
 ### 3. Ask Your Cameras (AI Natural Language Queries)
-* **Setup**: Ensure Ollama is running (`ollama pull llama3`) and the cloud backend is active.
+* **Setup**: Ensure Ollama is running (`ollama pull deepseek-r1:1.5b`) and the cloud backend is active.
 * **Action**: Go to the **Ask Your Cameras** panel in your browser, type a query (e.g. *"Is anyone inside the restricted zone?"*), and hit ask.
-* **How it works**: The FastAPI endpoint fetches the recent structured event log from Postgres and feeds it into your local Ollama LLM to generate a natural language response.
+* **How it works**: The FastAPI endpoint fetches the recent structured event log from Postgres and feeds it into your local Ollama LLM (`deepseek-r1:1.5b`) to generate a natural language response.
 
-### 4. Edge Bandwidth Savings Benchmark
+### 4. Vision-Language Scene Captioning (SmolVLM)
+* **Setup**: Ensure the edge pipeline `python local/ingest.py` is actively running.
+* **Action**: Trigger an event (intrusion or productivity state change). The local edge pipeline will automatically feed the corresponding frame to the local **SmolVLM** model, generate a textual caption (e.g., describing a retail store, countertops, meat displays, etc.), and append it to the event payload.
+* **Verification**:
+  1. Check the live dashboard under **Live Event Feed** to confirm the `Scene` text description is rendered directly beneath the event details.
+  2. Ask a question through **Ask Your Cameras** (e.g., *"what did the most recent intrusion event show?"*). The LLM's response should extract and summarize visual elements directly from the SmolVLM-generated `scene_caption` inside the Postgres events grounding context, conforming to a strict `Activity/Time/Camera` format.
+
+### 5. Edge Bandwidth Savings Benchmark
 To verify the efficiency of sending metadata events instead of raw high-resolution video streams:
 * **Command**:
   ```bash
