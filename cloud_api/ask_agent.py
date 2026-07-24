@@ -135,8 +135,10 @@ def ask_ollama(question: str, events: list) -> str:
     last_error = None
     res_text = ""
     
+    model_name = os.environ.get("OLLAMA_MODEL", "llama3")
+    
     data = {
-        "model": "deepseek-r1:1.5b",
+        "model": model_name,
         "prompt": prompt,
         "stream": False
     }
@@ -161,7 +163,7 @@ def ask_ollama(question: str, events: list) -> str:
             
     if not res_text and last_error:
         logging.error(f"Failed to communicate with local Ollama after trying all URLs: {last_error}")
-        return f"Error: Local Ollama model failed to respond. (Is Ollama running locally with deepseek-r1:1.5b? Details: {last_error})"
+        return f"Error: Local Ollama model failed to respond. (Is Ollama running locally with {model_name}? Details: {last_error})"
 
     # Strip thinking block for deepseek-r1
     clean_res = re.sub(r'<think>.*?</think>', '', res_text, flags=re.DOTALL).strip()

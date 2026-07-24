@@ -11,6 +11,9 @@ PROJECT_ROOT=$(cd "$(dirname "$0")/.." && pwd)
 MEDIAMTX_BIN="$PROJECT_ROOT/mediamtx"
 SAMPLE_DIR="$PROJECT_ROOT/camera_sim/sample_videos"
 
+# Ensure ffmpeg from local virtual environment is on the PATH
+export PATH="$PROJECT_ROOT/env/bin:$PATH"
+
 # 1. Start mediamtx in the background
 echo "Starting mediamtx server..."
 if [ ! -f "$MEDIAMTX_BIN" ]; then
