@@ -48,6 +48,7 @@ flowchart TB
 | Language | Python 3.11 | Free, open-source | All backend and AI code |
 | Object Detection | Ultralytics YOLOv8s (`yolov8s.pt`) | Free, AGPL-3.0 (via `ultralytics` pip package) | Person/object detection for Intrusion Agent |
 | Pose Estimation | Ultralytics YOLOv8s-pose (`yolov8s-pose.pt`) | Free, AGPL-3.0 | Skeleton keypoint extraction for Productivity Agent |
+| Vision-Language Model | Hugging Face SmolVLM (`SmolVLM-256M-Instruct` / `SmolVLM-500M-Instruct`) | Free, Apache-2.0 | Edge-native frame description / scene captioning |
 | Camera simulation | mediamtx (latest release binary) | Free, open-source (MIT) | Turns a video file into a real RTSP stream |
 | Stream looping | ffmpeg | Free, open-source (LGPL/GPL) | Feeds video file into mediamtx continuously |
 | Frame processing | opencv-python | Free, open-source | Reading frames, drawing boxes/zones, computing zone overlap |
@@ -228,6 +229,17 @@ The edge processing stack (ingest.py, mediamtx, ffmpeg) runs natively on the hos
 | Public cloud dashboard | `agent-grid-two.vercel.app` | Camera list, agent toggle grid, live text event feed, "Ask Your Cameras" box, 2-3 short pre-recorded demo clips/GIFs labeled as such, bandwidth-comparison widget | **No live video — text/events + pre-recorded clips only** |
 
 *This split exists because continuously streaming live video to a public server 24/7 requires paid bandwidth/compute that free tiers do not provide — this is the same real-world cost constraint that motivates commercial split-AI architecture.*
+
+---
+
+## SmolVLM Vision-Language Integration
+
+To enable rich visual reasoning, AgentGrid integrates **SmolVLM-256M-Instruct** (and family models like SmolVLM-500M) locally at the edge:
+
+- **What is SmolVLM?** A lightweight, extremely fast Vision-Language Model purpose-built by Hugging Face for low-resource and edge environments. It is extremely compact (~1GB model file size), allowing it to run with minimal VRAM/RAM overhead.
+- **Why was it chosen?** Instead of using massive multi-billion parameter VLMs, SmolVLM offers high-quality image-to-text scene description capabilities at high throughput, making it perfect for real-time edge processing on laptops or embedded devices.
+- **Local vs. Cloud Edge execution (Split AI)**: To reinforce AgentGrid's Split AI architecture, VLM captioning is executed entirely locally at the edge. The raw video frame never leaves the local machine, preserving user privacy. Only the generated text description (`scene_caption` inside the JSON metadata) is transmitted to the cloud orchestrator.
+- **Note**: Scene captioning requires the local edge processing pipeline (`ingest.py` or `vlm_test.py`) to be actively running on the host system, as SmolVLM is not hosted in the cloud.
 
 ---
 
